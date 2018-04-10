@@ -80,17 +80,6 @@ class MenuItem extends DataObject {
         return $fields;
     }
 
-    public function onBeforeWrite()
-    {
-        parent::onBeforeWrite();
-        if(!$this->MenuID){
-            $parent = $this->ParentItem();
-            if($parent){
-                $this->MenuID = $parent->MenuID;
-            }
-        }
-    }
-
     /**
      * @return bool|mixed
      */
