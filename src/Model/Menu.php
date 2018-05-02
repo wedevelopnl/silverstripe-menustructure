@@ -103,7 +103,16 @@ class Menu extends DataObject implements TemplateGlobalProvider {
      * @return DataObject
      */
     public static function MenustructureMenu($slug, $template = false) {
-        $menu = Menu::get()->filter('Slug', $slug)->first();
+        if(class_exists('SilverStripe\Subsites\Model\Subsite')){
+            $menu = Menu::get()->filter([
+                'Slug' => $slug,
+                'SubsiteID' => \SilverStripe\Subsites\State\SubsiteState::singleton()->getSubsiteId()
+            ])->first();
+        }else {
+            $menu = Menu::get()->filter([
+                'Slug' => $slug
+            ])->first();
+        }
         if($template && $menu){
             return $menu->renderWith($template);
         }
