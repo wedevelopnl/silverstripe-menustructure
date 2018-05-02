@@ -68,7 +68,7 @@ class MenuItem extends DataObject {
         $fields->dataFieldByName('OpenInNewWindow')->hideIf('LinkType')->isEqualTo('no-link');
 
         $fields->addFieldToTab('Root.Main', $fields->dataFieldByName('OpenInNewWindow'));
-        $fields->addFieldToTab('Root.Main', $fields->dataFieldByName('Image')->setDescription('Optional image, can be used in some templates.'));
+        $fields->addFieldToTab('Root.Main', $fields->dataFieldByName('Image')->setFolderName('Menus')->setDescription('Optional image, can be used in some templates.'));
 
         $fields->removeByName('Items');
         if($this->exists()){
@@ -93,6 +93,17 @@ class MenuItem extends DataObject {
                 break;
         }
         return false;
+    }
+    
+    protected function onAfterWrite()
+    {
+        parent::onAfterWrite();
+
+        $image = $this->Image();
+
+        if ($image && $image->exists() && !$image->isPublished()) {
+            $image->doPublish();
+        }
     }
 
 }
