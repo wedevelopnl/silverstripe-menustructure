@@ -95,6 +95,16 @@ class MenuItem extends DataObject {
         return false;
     }
     
+    /**
+     * @return string
+     */
+    public function LinkingMode(){
+        if($this->LinkType == 'page'){
+            return Controller::curr()->ID == $this->LinkedPageID ? 'current' : 'link';
+        }
+        return 'link';
+    }
+    
     protected function onAfterWrite()
     {
         parent::onAfterWrite();
