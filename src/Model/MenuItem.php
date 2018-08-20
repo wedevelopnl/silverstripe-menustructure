@@ -87,7 +87,7 @@ class MenuItem extends DataObject {
     public function getLink(){
         switch ($this->LinkType) {
             case 'url':
-                return $this->URL;
+                return $this->Url;
                 break;
             case 'page':
                 return $this->LinkedPage()->Link();
