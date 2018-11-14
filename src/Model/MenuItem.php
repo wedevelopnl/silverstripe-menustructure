@@ -116,5 +116,16 @@ class MenuItem extends DataObject {
             $image->doPublish();
         }
     }
+    
+    /**
+     * Recursive delete
+     */
+    public function onBeforeDelete()
+    {
+        parent::onBeforeDelete();
+        foreach($this->Items() as $item){
+            $item->delete();
+        }
+    }
 
 }
