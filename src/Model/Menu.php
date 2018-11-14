@@ -65,6 +65,17 @@ class Menu extends DataObject implements TemplateGlobalProvider {
             $this->Slug = URLSegmentFilter::create()->filter($this->Title);
         }
     }
+    
+    /**
+     * Recursive delete
+     */
+    public function onBeforeDelete()
+    {
+        parent::onBeforeDelete();
+        foreach($this->Items() as $item){
+            $item->delete();
+        }
+    }
 
     /**
      * @return bool
