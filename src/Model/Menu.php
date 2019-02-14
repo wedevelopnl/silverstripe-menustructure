@@ -97,7 +97,7 @@ class Menu extends DataObject implements TemplateGlobalProvider {
      */
     public function canCreate($member = null, $context = array())
     {
-        if (Permission::checkMember($member, 'CMSACCESSTheWebmenMenustructureAdminMenusAdmin')) {
+        if (Permission::checkMember($member, 'CMS_ACCESS_TheWebmen\Menustructure\Admin\MenusAdmin')) {
             return true;
         }
 
@@ -110,7 +110,7 @@ class Menu extends DataObject implements TemplateGlobalProvider {
      */
     public function canView($member = null)
     {
-        if (Permission::checkMember($member, 'CMSACCESSTheWebmenMenustructureAdminMenusAdmin')) {
+        if (Permission::checkMember($member, 'CMS_ACCESS_TheWebmen\Menustructure\Admin\MenusAdmin')) {
             return true;
         }
 
@@ -123,7 +123,7 @@ class Menu extends DataObject implements TemplateGlobalProvider {
      */
     public function canEdit($member = null)
     {
-        if (Permission::checkMember($member, 'CMSACCESSTheWebmenMenustructureAdminMenusAdmin')) {
+        if (Permission::checkMember($member, 'CMS_ACCESS_TheWebmen\Menustructure\Admin\MenusAdmin')) {
             return true;
         }
 
@@ -139,6 +139,11 @@ class Menu extends DataObject implements TemplateGlobalProvider {
         if($this->IsProtected()){
             return false;
         }
+
+        if (Permission::checkMember($member, 'CMS_ACCESS_TheWebmen\Menustructure\Admin\MenusAdmin')) {
+            return true;
+        }
+        
         return parent::canDelete($member);
     }
 

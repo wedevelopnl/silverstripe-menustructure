@@ -114,7 +114,7 @@ class MenuItem extends DataObject {
      */
     public function canCreate($member = null, $context = array())
     {
-        if (Permission::checkMember($member, 'CMSACCESSTheWebmenMenustructureAdminMenusAdmin')) {
+        if (Permission::checkMember($member, 'CMS_ACCESS_TheWebmen\Menustructure\Admin\MenusAdmin')) {
             return true;
         }
 
@@ -127,7 +127,7 @@ class MenuItem extends DataObject {
      */
     public function canView($member = null)
     {
-        if (Permission::checkMember($member, 'CMSACCESSTheWebmenMenustructureAdminMenusAdmin')) {
+        if (Permission::checkMember($member, 'CMS_ACCESS_TheWebmen\Menustructure\Admin\MenusAdmin')) {
             return true;
         }
 
@@ -140,7 +140,7 @@ class MenuItem extends DataObject {
      */
     public function canEdit($member = null)
     {
-        if (Permission::checkMember($member, 'CMSACCESSTheWebmenMenustructureAdminMenusAdmin')) {
+        if (Permission::checkMember($member, 'CMS_ACCESS_TheWebmen\Menustructure\Admin\MenusAdmin')) {
             return true;
         }
 
@@ -153,7 +153,7 @@ class MenuItem extends DataObject {
      */
     public function canDelete($member = null)
     {
-        if (Permission::checkMember($member, 'CMSACCESSTheWebmenMenustructureAdminMenusAdmin')) {
+        if (Permission::checkMember($member, 'CMS_ACCESS_TheWebmen\Menustructure\Admin\MenusAdmin')) {
             return true;
         }
 
