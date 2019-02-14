@@ -6,6 +6,7 @@ use SilverStripe\Forms\GridField\GridField;
 use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
 use SilverStripe\Forms\HiddenField;
 use SilverStripe\ORM\DataObject;
+use SilverStripe\Security\Permission;
 use SilverStripe\View\Parsers\URLSegmentFilter;
 use SilverStripe\View\TemplateGlobalProvider;
 use Symbiote\GridFieldExtensions\GridFieldOrderableRows;
@@ -65,7 +66,7 @@ class Menu extends DataObject implements TemplateGlobalProvider {
             $this->Slug = URLSegmentFilter::create()->filter($this->Title);
         }
     }
-    
+
     /**
      * Recursive delete
      */
@@ -87,6 +88,46 @@ class Menu extends DataObject implements TemplateGlobalProvider {
             return true;
         }
         return false;
+    }
+
+    /**
+     * @param null $member
+     * @param array $context
+     * @return bool
+     */
+    public function canCreate($member = null, $context = array())
+    {
+        if (Permission::checkMember($member, 'CMSACCESSTheWebmenMenustructureAdminMenusAdmin')) {
+            return true;
+        }
+
+        return parent::canCreate($member);
+    }
+
+    /**
+     * @param null $member
+     * @return bool
+     */
+    public function canView($member = null)
+    {
+        if (Permission::checkMember($member, 'CMSACCESSTheWebmenMenustructureAdminMenusAdmin')) {
+            return true;
+        }
+
+        return parent::canView($member);
+    }
+
+    /**
+     * @param null $member
+     * @return bool
+     */
+    public function canEdit($member = null)
+    {
+        if (Permission::checkMember($member, 'CMSACCESSTheWebmenMenustructureAdminMenusAdmin')) {
+            return true;
+        }
+
+        return parent::canEdit($member);
     }
 
     /**

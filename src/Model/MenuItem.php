@@ -10,6 +10,7 @@ use SilverStripe\Forms\GridField\GridField;
 use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
 use SilverStripe\Forms\TreeDropdownField;
 use SilverStripe\ORM\DataObject;
+use SilverStripe\Security\Permission;
 use Symbiote\GridFieldExtensions\GridFieldOrderableRows;
 use UncleCheese\DisplayLogic\Forms\Wrapper;
 
@@ -95,7 +96,7 @@ class MenuItem extends DataObject {
         }
         return false;
     }
-    
+
     /**
      * @return string
      */
@@ -105,7 +106,60 @@ class MenuItem extends DataObject {
         }
         return 'link';
     }
-    
+
+    /**
+     * @param null $member
+     * @param array $context
+     * @return bool
+     */
+    public function canCreate($member = null, $context = array())
+    {
+        if (Permission::checkMember($member, 'CMSACCESSTheWebmenMenustructureAdminMenusAdmin')) {
+            return true;
+        }
+
+        return parent::canCreate($member, $context);
+    }
+
+    /**
+     * @param null $member
+     * @return bool
+     */
+    public function canView($member = null)
+    {
+        if (Permission::checkMember($member, 'CMSACCESSTheWebmenMenustructureAdminMenusAdmin')) {
+            return true;
+        }
+
+        return parent::canView($member);
+    }
+
+    /**
+     * @param null $member
+     * @return bool
+     */
+    public function canEdit($member = null)
+    {
+        if (Permission::checkMember($member, 'CMSACCESSTheWebmenMenustructureAdminMenusAdmin')) {
+            return true;
+        }
+
+        return parent::canEdit($member);
+    }
+
+    /**
+     * @param null $member
+     * @return bool
+     */
+    public function canDelete($member = null)
+    {
+        if (Permission::checkMember($member, 'CMSACCESSTheWebmenMenustructureAdminMenusAdmin')) {
+            return true;
+        }
+
+        return parent::canDelete($member);
+    }
+
     protected function onAfterWrite()
     {
         parent::onAfterWrite();
@@ -116,7 +170,7 @@ class MenuItem extends DataObject {
             $image->doPublish();
         }
     }
-    
+
     /**
      * Recursive delete
      */
