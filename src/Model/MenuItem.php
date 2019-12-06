@@ -56,30 +56,30 @@ class MenuItem extends DataObject {
      */
     public function getCMSFields()
     {
-        $fields = parent::getCMSFields();
+        $this->beforeUpdateCMSFields(function($fields) {
+            $fields->removeByName('Sort');
+            $fields->removeByName('ParentItemID');
+            $fields->removeByName('MenuID');
 
-        $fields->removeByName('Sort');
-        $fields->removeByName('ParentItemID');
-        $fields->removeByName('MenuID');
+            $fields->replaceField('LinkType', DropdownField::create('LinkType', $this->fieldLabel('LinkType'), self::$link_types));
+            $fields->replaceField('LinkedPageID', $linkedPageWrapper = Wrapper::create(TreeDropdownField::create('LinkedPageID', $this->fieldLabel('LinkedPage'), SiteTree::class)));
 
-        $fields->replaceField('LinkType', DropdownField::create('LinkType', $this->fieldLabel('LinkType'), self::$link_types));
-        $fields->replaceField('LinkedPageID', $linkedPageWrapper = Wrapper::create(TreeDropdownField::create('LinkedPageID', $this->fieldLabel('LinkedPage'), SiteTree::class)));
+            $linkedPageWrapper->displayIf('LinkType')->isEqualTo('page');
+            $fields->dataFieldByName('Url')->displayIf('LinkType')->isEqualTo('url');
+            $fields->dataFieldByName('OpenInNewWindow')->hideIf('LinkType')->isEqualTo('no-link');
 
-        $linkedPageWrapper->displayIf('LinkType')->isEqualTo('page');
-        $fields->dataFieldByName('Url')->displayIf('LinkType')->isEqualTo('url');
-        $fields->dataFieldByName('OpenInNewWindow')->hideIf('LinkType')->isEqualTo('no-link');
+            $fields->addFieldToTab('Root.Main', $fields->dataFieldByName('OpenInNewWindow'));
+            $fields->addFieldToTab('Root.Main', $fields->dataFieldByName('Image')->setFolderName('Menus')->setDescription('Optional image, can be used in some templates.'));
 
-        $fields->addFieldToTab('Root.Main', $fields->dataFieldByName('OpenInNewWindow'));
-        $fields->addFieldToTab('Root.Main', $fields->dataFieldByName('Image')->setFolderName('Menus')->setDescription('Optional image, can be used in some templates.'));
+            $fields->removeByName('Items');
+            if($this->exists()){
+                $gridConfig = new GridFieldConfig_RecordEditor();
+                $gridConfig->addComponent(GridFieldOrderableRows::create());
+                $fields->addFieldToTab('Root.Main', GridField::create('Items', 'Items', $this->Items(), $gridConfig));
+            }
+        });
 
-        $fields->removeByName('Items');
-        if($this->exists()){
-            $gridConfig = new GridFieldConfig_RecordEditor();
-            $gridConfig->addComponent(GridFieldOrderableRows::create());
-            $fields->addFieldToTab('Root.Main', GridField::create('Items', 'Items', $this->Items(), $gridConfig));
-        }
-
-        return $fields;
+        return parent::getCMSFields();
     }
 
     /**

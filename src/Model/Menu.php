@@ -35,25 +35,25 @@ class Menu extends DataObject implements TemplateGlobalProvider {
      */
     public function getCMSFields()
     {
-        $fields = parent::getCMSFields();
-
-        if($this->IsProtected()){
+        $this->beforeUpdateCMSFields(function($fields) {
+            if($this->IsProtected()){
             $fields->dataFieldByName('Slug')->setReadonly(true);
-        }
+            }
 
-        $fields->removeByName('SubsiteID');
-        if(class_exists('SilverStripe\Subsites\Model\Subsite')){
-            $fields->push(new HiddenField('SubsiteID','SubsiteID', \SilverStripe\Subsites\State\SubsiteState::singleton()->getSubsiteId()));
-        }
+            $fields->removeByName('SubsiteID');
+            if(class_exists('SilverStripe\Subsites\Model\Subsite')){
+                $fields->push(new HiddenField('SubsiteID','SubsiteID', \SilverStripe\Subsites\State\SubsiteState::singleton()->getSubsiteId()));
+            }
 
-        $fields->removeByName('Items');
-        if($this->exists()){
-            $gridConfig = new GridFieldConfig_RecordEditor();
-            $gridConfig->addComponent(GridFieldOrderableRows::create());
-            $fields->addFieldToTab('Root.Main', GridField::create('Items', 'Items', $this->Items(), $gridConfig));
-        }
+            $fields->removeByName('Items');
+            if($this->exists()){
+                $gridConfig = new GridFieldConfig_RecordEditor();
+                $gridConfig->addComponent(GridFieldOrderableRows::create());
+                $fields->addFieldToTab('Root.Main', GridField::create('Items', 'Items', $this->Items(), $gridConfig));
+            }
+        });
 
-        return $fields;
+        return parent::getCMSFields();
     }
 
     /**
@@ -143,7 +143,7 @@ class Menu extends DataObject implements TemplateGlobalProvider {
         if (Permission::checkMember($member, 'CMS_ACCESS_TheWebmen\Menustructure\Admin\MenusAdmin')) {
             return true;
         }
-        
+
         return parent::canDelete($member);
     }
 
