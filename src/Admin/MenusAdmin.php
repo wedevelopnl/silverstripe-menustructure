@@ -15,6 +15,8 @@ class MenusAdmin extends ModelAdmin {
 
     private static $menu_title = 'Menus';
 
+    private static $menu_icon_class = 'font-icon-menu';
+
     public function getEditForm($id = null, $fields = null){
         $form = parent::getEditForm($id, $fields);
 

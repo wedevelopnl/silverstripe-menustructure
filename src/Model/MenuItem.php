@@ -2,6 +2,7 @@
 
 namespace TheWebmen\Menustructure\Model;
 
+use SilverStripe\Assets\File;
 use SilverStripe\Assets\Image;
 use SilverStripe\CMS\Model\SiteTree;
 use SilverStripe\Control\Controller;
@@ -19,6 +20,7 @@ class MenuItem extends DataObject {
     private static $link_types = [
         'page' => 'Page',
         'url' => 'URL',
+        'file' => 'File',
         'no-link' => 'Not linked'
     ];
 
@@ -34,6 +36,7 @@ class MenuItem extends DataObject {
 
     private static $has_one = [
         'Image' => Image::class,
+        'File' => File::class,
         'Menu' => Menu::class,
         'ParentItem' => MenuItem::class,
         'LinkedPage' => SiteTree::class
@@ -41,6 +44,11 @@ class MenuItem extends DataObject {
 
     private static $has_many = [
         'Items' => MenuItem::class
+    ];
+
+    private static $owns = [
+      'Image',
+      'File'
     ];
 
     private static $summary_fields = [
@@ -61,12 +69,13 @@ class MenuItem extends DataObject {
             $fields->removeByName('ParentItemID');
             $fields->removeByName('MenuID');
 
-            $fields->replaceField('LinkType', DropdownField::create('LinkType', $this->fieldLabel('LinkType'), self::$link_types));
+            $fields->replaceField('LinkType', DropdownField::create('LinkType', $this->fieldLabel('LinkType'), $this->getLinkTypes()));
             $fields->replaceField('LinkedPageID', $linkedPageWrapper = Wrapper::create(TreeDropdownField::create('LinkedPageID', $this->fieldLabel('LinkedPage'), SiteTree::class)));
 
             $linkedPageWrapper->displayIf('LinkType')->isEqualTo('page');
+            $fields->dataFieldByName('File')->displayIf('LinkType')->isEqualTo('file');
             $fields->dataFieldByName('Url')->displayIf('LinkType')->isEqualTo('url');
-            $fields->dataFieldByName('OpenInNewWindow')->hideIf('LinkType')->isEqualTo('no-link');
+            $fields->dataFieldByName('OpenInNewWindow')->displayIf('LinkType')->isEqualTo('page')->orIf('LinkType')->isEqualTo('url')->orIf('LinkType')->isEqualTo('file');
 
             $fields->addFieldToTab('Root.Main', $fields->dataFieldByName('OpenInNewWindow'));
             $fields->addFieldToTab('Root.Main', $fields->dataFieldByName('Image')->setFolderName('Menus')->setDescription('Optional image, can be used in some templates.'));
@@ -82,6 +91,12 @@ class MenuItem extends DataObject {
         return parent::getCMSFields();
     }
 
+    private function getLinkTypes() {
+        $linkTypes = self::$link_types;
+        $this->extend('updateLinkTypes', $linkTypes);
+        return $linkTypes;
+    }
+
     /**
      * @return bool|mixed
      */
@@ -92,6 +107,9 @@ class MenuItem extends DataObject {
                 break;
             case 'page':
                 return $this->LinkedPage()->Link();
+                break;
+            case 'file':
+                return $this->File()->Link();
                 break;
         }
         return false;
@@ -158,17 +176,6 @@ class MenuItem extends DataObject {
         }
 
         return parent::canDelete($member);
-    }
-
-    protected function onAfterWrite()
-    {
-        parent::onAfterWrite();
-
-        $image = $this->Image();
-
-        if ($image && $image->exists() && !$image->isPublished()) {
-            $image->doPublish();
-        }
     }
 
     /**
