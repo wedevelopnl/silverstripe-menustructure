@@ -13,9 +13,8 @@ The menus in this module are also more customizable then the "default" silverstr
 * [Configuration](docs/en/configuration.md)
 * [Customizing](docs/en/customizing.md)
 
-# Licsense
+# License
 See [License](LICENSE)
-
 
 ## Maintainers
 * [Webmen](https://www.webmen.nl/) <developement@webmen.nl>
