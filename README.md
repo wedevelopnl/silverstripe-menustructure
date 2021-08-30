@@ -11,7 +11,6 @@ The menus in this module are also more customizable then the "default" silverstr
 
 # Documentation
 * [Configuration](docs/en/configuration.md)
-* [Customizing](docs/en/customizing.md)
 
 # License
 See [License](LICENSE)
