@@ -31,7 +31,8 @@ class MenuItem extends DataObject {
         'LinkType' => 'Varchar',
         'Url' => 'Varchar(255)',
         'OpenInNewWindow' => 'Boolean',
-        'Sort' => 'Int'
+        'Sort' => 'Int',
+        'AnchorText' => 'Varchar',
     ];
 
     private static $has_one = [
@@ -54,10 +55,12 @@ class MenuItem extends DataObject {
     private static $summary_fields = [
         'Title',
         'LinkType',
-        'OpenInNewWindow'
+        'OpenInNewWindow',
     ];
 
     private static $default_sort = 'Sort';
+
+    private static $enable_page_anchor = false;
 
     /**
      * @return \SilverStripe\Forms\FieldList
@@ -76,6 +79,13 @@ class MenuItem extends DataObject {
             $fields->dataFieldByName('File')->displayIf('LinkType')->isEqualTo('file');
             $fields->dataFieldByName('Url')->displayIf('LinkType')->isEqualTo('url');
             $fields->dataFieldByName('OpenInNewWindow')->displayIf('LinkType')->isEqualTo('page')->orIf('LinkType')->isEqualTo('url')->orIf('LinkType')->isEqualTo('file');
+
+            if (self::config()->enable_page_anchor) {
+                $fields->dataFieldByName('AnchorText')->displayIf('LinkType')->isEqualTo('page');
+                $fields->addFieldToTab('Root.Main', $fields->dataFieldByName('AnchorText'));
+            } else {
+                $fields->removeByName('AnchorText');
+            }
 
             $fields->addFieldToTab('Root.Main', $fields->dataFieldByName('OpenInNewWindow'));
             $fields->addFieldToTab('Root.Main', $fields->dataFieldByName('Image')->setFolderName('Menus')->setDescription('Optional image, can be used in some templates.'));
@@ -106,7 +116,13 @@ class MenuItem extends DataObject {
                 return $this->Url;
                 break;
             case 'page':
-                return $this->LinkedPage()->Link();
+                $link = $this->LinkedPage()->Link();
+
+                if (self::config()->enable_page_anchor && $this->AnchorText) {
+                    $link .= sprintf('#%s', $this->AnchorText);
+                }
+
+                return $link;
                 break;
             case 'file':
                 return $this->File()->Link();
