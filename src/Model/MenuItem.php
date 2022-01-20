@@ -3,7 +3,6 @@
 namespace TheWebmen\Menustructure\Model;
 
 use SilverStripe\Assets\File;
-use SilverStripe\Assets\Image;
 use SilverStripe\CMS\Model\SiteTree;
 use SilverStripe\Control\Controller;
 use SilverStripe\Forms\DropdownField;
@@ -35,7 +34,6 @@ class MenuItem extends DataObject {
     ];
 
     private static $has_one = [
-        'Image' => Image::class,
         'File' => File::class,
         'Menu' => Menu::class,
         'ParentItem' => MenuItem::class,
@@ -47,7 +45,6 @@ class MenuItem extends DataObject {
     ];
 
     private static $owns = [
-      'Image',
       'File'
     ];
 
@@ -78,7 +75,6 @@ class MenuItem extends DataObject {
             $fields->dataFieldByName('OpenInNewWindow')->displayIf('LinkType')->isEqualTo('page')->orIf('LinkType')->isEqualTo('url')->orIf('LinkType')->isEqualTo('file');
 
             $fields->addFieldToTab('Root.Main', $fields->dataFieldByName('OpenInNewWindow'));
-            $fields->addFieldToTab('Root.Main', $fields->dataFieldByName('Image')->setFolderName('Menus')->setDescription('Optional image, can be used in some templates.'));
 
             $fields->removeByName('Items');
             if($this->exists()){
