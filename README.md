@@ -1,24 +1,25 @@
 # SilverStripe Menustructure module
 
-## Protect menus from deletion
-```yaml
-TheWebmen\Menustructure\Model\Menu:
-  protected_menus:
-    - 'main-menu'
-    - 'footer-col1'
-    - 'footer-col2'
-    - 'footer-col3'
-```
+This module makes it possible to use multiple menus on 1 SilverStripe site, instead of using the "default" menu.
+The menus in this module are also more customizable then the "default" silverstripe menu.
 
-## Usage
-Render a menu in any template using:
-```
-$MenustructureMenu('menu-slug')
-```
-Render a menu using a custom template using:
-```
-$MenustructureMenu('menu-slug', 'Menus/MainMenu')
-```
+# Requirements
+* SilverStripe 4.x
 
-## Todo
-* Improve docs
+# Installation
+`composer require thewebmen/silverstripe-menustructure`
+
+# Documentation
+* [Configuration](docs/en/configuration.md)
+
+# License
+See [License](LICENSE)
+
+## Maintainers
+* [Webmen](https://www.webmen.nl/) <developement@webmen.nl>
+
+## Contributing
+See [Contributing](CONTRIBUTING.md)
+
+## Development and contribution
+If you would like to make contributions to the module please ensure you raise a pull request and discuss with the module maintainers.
