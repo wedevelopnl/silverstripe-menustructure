@@ -23,13 +23,13 @@ TheWebmen\Menustructure\Model\Menu:
 It is possible to render the menus in custom templates.
 De default template is found in this module under `templates/TheWebmen/Menustructure/Model/Menu.ss`.
 
-You can use the code from `Menu.ss` as example for your custom menus.
+You can use this code as example for custom menus.
 
-### Render the menu
+### Render the custom menu
 
 Render a menu using a custom template using:
 ```
 $MenustructureMenu('menu-slug', 'Menus/MainMenu')
 ```
 
-Where the first argument is the slug of the menu. And the second argument is the template you want to use.
+Here the first argument is the slug of the menu and the second argument is the template you want to use.
