@@ -10,7 +10,7 @@ The menus in this module are also more customizable then the "default" silverstr
 `composer require thewebmen/silverstripe-menustructure`
 
 # Documentation
-* [Configuration](docs/en/configuration.md)
+* [Configuration](docs/configuration.md)
 
 # License
 See [License](LICENSE)
