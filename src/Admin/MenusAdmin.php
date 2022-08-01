@@ -5,8 +5,8 @@ namespace TheWebmen\Menustructure\Admin;
 use SilverStripe\Admin\ModelAdmin;
 use TheWebmen\Menustructure\Model\Menu;
 
-class MenusAdmin extends ModelAdmin {
-
+class MenusAdmin extends ModelAdmin
+{
     private static $managed_models = [
         Menu::class
     ];
@@ -17,11 +17,12 @@ class MenusAdmin extends ModelAdmin {
 
     private static $menu_icon_class = 'font-icon-menu';
 
-    public function getEditForm($id = null, $fields = null){
+    public function getEditForm($id = null, $fields = null)
+    {
         $form = parent::getEditForm($id, $fields);
 
         $gridField = $form->Fields()->fieldByName($this->sanitiseClassName($this->modelClass));
-        if(class_exists('SilverStripe\Subsites\Model\Subsite')){
+        if (class_exists('SilverStripe\Subsites\Model\Subsite')) {
             $list = $gridField->getList()->filter(array('SubsiteID' => \SilverStripe\Subsites\State\SubsiteState::singleton()->getSubsiteId()));
             $gridField->setList($list);
         }
@@ -29,8 +30,8 @@ class MenusAdmin extends ModelAdmin {
         return $form;
     }
 
-    public function subsiteCMSShowInMenu(){
+    public function subsiteCMSShowInMenu()
+    {
         return true;
     }
-
 }

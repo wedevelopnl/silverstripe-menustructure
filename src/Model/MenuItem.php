@@ -14,8 +14,8 @@ use SilverStripe\Security\Permission;
 use Symbiote\GridFieldExtensions\GridFieldOrderableRows;
 use UncleCheese\DisplayLogic\Forms\Wrapper;
 
-class MenuItem extends DataObject {
-
+class MenuItem extends DataObject
+{
     private static $link_types = [
         'page' => 'Page',
         'url' => 'URL',
@@ -46,7 +46,7 @@ class MenuItem extends DataObject {
     ];
 
     private static $owns = [
-      'File'
+        'File'
     ];
 
     private static $summary_fields = [
@@ -64,7 +64,7 @@ class MenuItem extends DataObject {
      */
     public function getCMSFields()
     {
-        $this->beforeUpdateCMSFields(function($fields) {
+        $this->beforeUpdateCMSFields(function ($fields) {
             $fields->removeByName('Sort');
             $fields->removeByName('ParentItemID');
             $fields->removeByName('MenuID');
@@ -87,7 +87,7 @@ class MenuItem extends DataObject {
             $fields->addFieldToTab('Root.Main', $fields->dataFieldByName('OpenInNewWindow'));
 
             $fields->removeByName('Items');
-            if($this->exists()){
+            if ($this->exists()) {
                 $gridConfig = new GridFieldConfig_RecordEditor();
                 $gridConfig->addComponent(GridFieldOrderableRows::create());
                 $fields->addFieldToTab('Root.Main', GridField::create('Items', 'Items', $this->Items(), $gridConfig));
@@ -97,7 +97,8 @@ class MenuItem extends DataObject {
         return parent::getCMSFields();
     }
 
-    private function getLinkTypes() {
+    private function getLinkTypes()
+    {
         $linkTypes = self::$link_types;
         $this->extend('updateLinkTypes', $linkTypes);
         return $linkTypes;
@@ -106,10 +107,11 @@ class MenuItem extends DataObject {
     /**
      * @return bool|mixed
      */
-    public function getLink(){
+    public function getLink()
+    {
         switch ($this->LinkType) {
             case 'url':
-                return $this->Url;
+                $link = $this->Url;
                 break;
             case 'page':
                 $link = $this->LinkedPage()->Link();
@@ -117,21 +119,27 @@ class MenuItem extends DataObject {
                 if (self::config()->enable_page_anchor && $this->AnchorText) {
                     $link .= sprintf('#%s', $this->AnchorText);
                 }
-
-                return $link;
                 break;
             case 'file':
-                return $this->File()->Link();
+                $link = $this->File()->Link();
                 break;
         }
+
+        if (isset($link)) {
+            $this->extend('updateLink', $link);
+
+            return $link;
+        }
+
         return false;
     }
 
     /**
      * @return string
      */
-    public function LinkingMode(){
-        if($this->LinkType == 'page'){
+    public function LinkingMode()
+    {
+        if ($this->LinkType == 'page') {
             return Controller::curr()->ID == $this->LinkedPageID ? 'current' : 'link';
         }
         return 'link';
@@ -196,9 +204,8 @@ class MenuItem extends DataObject {
     public function onBeforeDelete()
     {
         parent::onBeforeDelete();
-        foreach($this->Items() as $item){
+        foreach ($this->Items() as $item) {
             $item->delete();
         }
     }
-
 }
