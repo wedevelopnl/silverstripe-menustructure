@@ -8,6 +8,7 @@ use SilverStripe\Control\Controller;
 use SilverStripe\Forms\DropdownField;
 use SilverStripe\Forms\GridField\GridField;
 use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
+use SilverStripe\Forms\TextField;
 use SilverStripe\Forms\TreeDropdownField;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Permission;
@@ -32,6 +33,7 @@ class MenuItem extends DataObject
         'OpenInNewWindow' => 'Boolean',
         'Sort' => 'Int',
         'AnchorText' => 'Varchar',
+        'QueryString' => 'Varchar',
     ];
 
     private static $has_one = [
@@ -59,6 +61,8 @@ class MenuItem extends DataObject
 
     private static $enable_page_anchor = false;
 
+    private static $enable_query_string = false;
+
     /**
      * @return \SilverStripe\Forms\FieldList
      */
@@ -76,6 +80,16 @@ class MenuItem extends DataObject
             $fields->dataFieldByName('File')->displayIf('LinkType')->isEqualTo('file');
             $fields->dataFieldByName('Url')->displayIf('LinkType')->isEqualTo('url');
             $fields->dataFieldByName('OpenInNewWindow')->displayIf('LinkType')->isEqualTo('page')->orIf('LinkType')->isEqualTo('url')->orIf('LinkType')->isEqualTo('file');
+
+            if (self::config()->enable_query_string) {
+                /** @var TextField $queryStringField */
+                $queryStringField = $fields->dataFieldByName('QueryString');
+                $queryStringField->displayIf('LinkType')->isEqualTo('page');
+                $queryStringField->setDescription('Example: <code>foo=bar&john=doe</code>');
+                $fields->addFieldToTab('Root.Main', $queryStringField);
+            } else {
+                $fields->removeByName('QueryString');
+            }
 
             if (self::config()->enable_page_anchor) {
                 $fields->dataFieldByName('AnchorText')->displayIf('LinkType')->isEqualTo('page');
@@ -116,9 +130,14 @@ class MenuItem extends DataObject
             case 'page':
                 $link = $this->LinkedPage()->Link();
 
-                if (self::config()->enable_page_anchor && $this->AnchorText) {
-                    $link .= sprintf('#%s', $this->AnchorText);
+                if (self::config()->enable_query_string && $this->QueryString) {
+                    $link = sprintf('%s?%s', $link, $this->QueryString);
                 }
+
+                if (self::config()->enable_page_anchor && $this->AnchorText) {
+                    $link = sprintf('%s#%s', $link, $this->AnchorText);
+                }
+
                 break;
             case 'file':
                 $link = $this->File()->Link();
