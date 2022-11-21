@@ -16,6 +16,7 @@
     "minimum-stability": "dev",
     "prefer-stable": true,
     "require": {
+        "php": "^8.1",
         "silverstripe/cms": "^4.0@dev",
         "silverstripe/vendor-plugin": "^1.0",
         "silverstripe/display-logic": "^2.0",
