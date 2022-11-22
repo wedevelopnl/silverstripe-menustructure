@@ -1,32 +1,40 @@
 <?php
 
-namespace TheWebmen\Menustructure\Model;
+namespace WeDevelop\Menustructure\Model;
 
 use SilverStripe\Assets\File;
 use SilverStripe\CMS\Model\SiteTree;
 use SilverStripe\Control\Controller;
 use SilverStripe\Forms\DropdownField;
+use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\GridField\GridField;
 use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
 use SilverStripe\Forms\TextField;
 use SilverStripe\Forms\TreeDropdownField;
 use SilverStripe\ORM\DataObject;
+use SilverStripe\ORM\HasManyList;
 use SilverStripe\Security\Permission;
 use Symbiote\GridFieldExtensions\GridFieldOrderableRows;
 use UncleCheese\DisplayLogic\Forms\Wrapper;
 
+/**
+ * @property string $LinkType
+ * @property string $QueryString
+ * @property string $AnchorText
+ * @property string $Url
+ * @property int $LinkedPageID
+ * @method File File()
+ * @method MenuItem ParentItem()
+ * @method MenuItem|HasManyList Items()
+ * @method SiteTree LinkedPage()
+ */
 class MenuItem extends DataObject
 {
-    private static $link_types = [
-        'page' => 'Page',
-        'url' => 'URL',
-        'file' => 'File',
-        'no-link' => 'Not linked'
-    ];
+    /** @config */
+    private static string $table_name = 'Menustructure_MenuItem';
 
-    private static $table_name = 'Menustructure_MenuItem';
-
-    private static $db = [
+    /** @config */
+    private static array $db = [
         'Title' => 'Varchar',
         'LinkType' => 'Varchar',
         'Url' => 'Varchar(255)',
@@ -36,42 +44,55 @@ class MenuItem extends DataObject
         'QueryString' => 'Varchar',
     ];
 
-    private static $has_one = [
+    /** @config */
+    private static array $has_one = [
         'File' => File::class,
         'Menu' => Menu::class,
         'ParentItem' => MenuItem::class,
-        'LinkedPage' => SiteTree::class
+        'LinkedPage' => SiteTree::class,
     ];
 
-    private static $has_many = [
-        'Items' => MenuItem::class
+    /** @config */
+    private static array $has_many = [
+        'Items' => MenuItem::class,
     ];
 
-    private static $owns = [
-        'File'
+    /** @config */
+    private static array $owns = [
+        'File',
     ];
 
-    private static $summary_fields = [
+    /** @config */
+    private static array $summary_fields = [
         'Title',
         'LinkType',
         'OpenInNewWindow',
     ];
 
-    private static $default_sort = 'Sort';
+    private static array $link_types = [
+        'page' => 'Page',
+        'url' => 'URL',
+        'file' => 'File',
+        'no-link' => 'Not linked',
+    ];
 
-    private static $enable_page_anchor = false;
+    /** @config */
+    private static string $default_sort = 'Sort';
 
-    private static $enable_query_string = false;
+    /** @config */
+    private static bool $enable_page_anchor = false;
 
-    /**
-     * @return \SilverStripe\Forms\FieldList
-     */
-    public function getCMSFields()
+    /** @config */
+    private static bool $enable_query_string = false;
+
+    public function getCMSFields(): FieldList
     {
         $this->beforeUpdateCMSFields(function ($fields) {
-            $fields->removeByName('Sort');
-            $fields->removeByName('ParentItemID');
-            $fields->removeByName('MenuID');
+            $fields->removeByName([
+                'Sort',
+                'ParentItemID',
+                'MenuID',
+            ]);
 
             $fields->replaceField('LinkType', DropdownField::create('LinkType', $this->fieldLabel('LinkType'), $this->getLinkTypes()));
             $fields->replaceField('LinkedPageID', $linkedPageWrapper = Wrapper::create(TreeDropdownField::create('LinkedPageID', $this->fieldLabel('LinkedPage'), SiteTree::class)));
@@ -111,18 +132,19 @@ class MenuItem extends DataObject
         return parent::getCMSFields();
     }
 
-    private function getLinkTypes()
+    private function getLinkTypes(): array
     {
         $linkTypes = self::$link_types;
-        $this->extend('updateLinkTypes', $linkTypes);
+
+        $this->extend('updateLinkTypes', self::$link_types);
+
         return $linkTypes;
     }
 
-    /**
-     * @return bool|mixed
-     */
-    public function getLink()
+    public function getLink(): string
     {
+        $link = '';
+
         switch ($this->LinkType) {
             case 'url':
                 $link = $this->Url;
@@ -144,87 +166,75 @@ class MenuItem extends DataObject
                 break;
         }
 
-        if (isset($link)) {
-            $this->extend('updateLink', $link);
+        $this->extend('updateLink', $link);
 
-            return $link;
-        }
-
-        return false;
+        return $link;
     }
 
-    /**
-     * @return string
-     */
-    public function LinkingMode()
+    public function LinkingMode(): string
     {
-        if ($this->LinkType == 'page') {
-            return Controller::curr()->ID == $this->LinkedPageID ? 'current' : 'link';
+        if ($this->LinkType === 'page') {
+            return Controller::curr()->ID === $this->LinkedPageID ? 'current' : 'link';
         }
+
         return 'link';
     }
 
-    /**
-     * @param null $member
-     * @param array $context
-     * @return bool
-     */
-    public function canCreate($member = null, $context = array())
+    public function canCreate(mixed $member = null, $context = []): bool
     {
-        if (Permission::checkMember($member, 'CMS_ACCESS_TheWebmen\Menustructure\Admin\MenusAdmin')) {
+        if (Permission::checkMember($member, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
             return true;
         }
 
         return parent::canCreate($member, $context);
     }
 
-    /**
-     * @param null $member
-     * @return bool
-     */
-    public function canView($member = null)
+    public function canView(mixed $member = null): bool
     {
-        if (Permission::checkMember($member, 'CMS_ACCESS_TheWebmen\Menustructure\Admin\MenusAdmin')) {
+        if (Permission::checkMember($member, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
             return true;
         }
 
         return parent::canView($member);
     }
 
-    /**
-     * @param null $member
-     * @return bool
-     */
-    public function canEdit($member = null)
+    public function canEdit(mixed $member = null): bool
     {
-        if (Permission::checkMember($member, 'CMS_ACCESS_TheWebmen\Menustructure\Admin\MenusAdmin')) {
+        if (Permission::checkMember($member, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
             return true;
         }
 
         return parent::canEdit($member);
     }
 
-    /**
-     * @param null $member
-     * @return bool
-     */
-    public function canDelete($member = null)
+    public function canDelete(mixed $member = null): bool
     {
-        if (Permission::checkMember($member, 'CMS_ACCESS_TheWebmen\Menustructure\Admin\MenusAdmin')) {
+        if (Permission::checkMember($member, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
             return true;
         }
 
         return parent::canDelete($member);
     }
 
-    /**
-     * Recursive delete
-     */
-    public function onBeforeDelete()
+    public function onBeforeDelete(): void
     {
         parent::onBeforeDelete();
         foreach ($this->Items() as $item) {
             $item->delete();
         }
+    }
+
+
+    public function getLevel(): int
+    {
+        $menuItem = $this;
+        $level = 0;
+
+        while ($menuItem->ParentItem()->exists()) {
+            $menuItem = $menuItem->ParentItem();
+            $level++;
+        }
+
+        return $level;
     }
 }

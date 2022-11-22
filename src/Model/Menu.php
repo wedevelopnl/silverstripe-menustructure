@@ -1,51 +1,65 @@
 <?php
 
-namespace TheWebmen\Menustructure\Model;
+namespace WeDevelop\Menustructure\Model;
 
+use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\GridField\GridField;
 use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
 use SilverStripe\Forms\HiddenField;
 use SilverStripe\ORM\DataObject;
+use SilverStripe\ORM\FieldType\DBHTMLText;
+use SilverStripe\ORM\HasManyList;
+use SilverStripe\Security\Member;
 use SilverStripe\Security\Permission;
 use SilverStripe\View\Parsers\URLSegmentFilter;
 use SilverStripe\View\TemplateGlobalProvider;
 use Symbiote\GridFieldExtensions\GridFieldOrderableRows;
 
+/**
+ * @property string $Title
+ * @property string $Slug
+ * @property int $SubsiteID
+ * @method MenuItem|HasManyList Items()
+ */
 class Menu extends DataObject implements TemplateGlobalProvider
 {
-    private static $table_name = 'Menustructure_Menu';
+    /** @config */
+    private static string $table_name = 'Menustructure_Menu';
 
-    private static $db = [
+    /** @config */
+    private static array $db = [
         'Title' => 'Varchar',
         'Slug' => 'Varchar',
-        'SubsiteID' => 'Int'
+        'SubsiteID' => 'Int',
     ];
 
-    private static $has_many = [
-        'Items' => MenuItem::class
+    /** @config */
+    private static array $has_many = [
+        'Items' => MenuItem::class,
     ];
 
-    private static $summary_fields = [
+    /** @config */
+    private static array $summary_fields = [
         'Title',
-        'Slug'
+        'Slug',
     ];
 
-    /**
-     * @return \SilverStripe\Forms\FieldList
-     */
-    public function getCMSFields()
+    public function getCMSFields(): FieldList
     {
         $this->beforeUpdateCMSFields(function ($fields) {
             if ($this->IsProtected()) {
                 $fields->dataFieldByName('Slug')->setReadonly(true);
             }
 
-            $fields->removeByName('SubsiteID');
+            $fields->removeByName([
+                'SubsiteID',
+                'Items',
+            ]);
+
             if (class_exists('SilverStripe\Subsites\Model\Subsite')) {
                 $fields->push(new HiddenField('SubsiteID', 'SubsiteID', \SilverStripe\Subsites\State\SubsiteState::singleton()->getSubsiteId()));
             }
 
-            $fields->removeByName('Items');
             if ($this->exists()) {
                 $gridConfig = new GridFieldConfig_RecordEditor();
                 $gridConfig->addComponent(GridFieldOrderableRows::create());
@@ -56,135 +70,104 @@ class Menu extends DataObject implements TemplateGlobalProvider
         return parent::getCMSFields();
     }
 
-    /**
-     * On before write generate the slug if needed
-     */
-    public function onBeforeWrite()
+    public function onBeforeWrite(): void
     {
         parent::onBeforeWrite();
+
         if (!$this->Slug) {
             $this->Slug = URLSegmentFilter::create()->filter($this->Title);
         }
     }
 
-    /**
-     * Recursive delete
-     */
-    public function onBeforeDelete()
+    public function onBeforeDelete(): void
     {
         parent::onBeforeDelete();
+
         foreach ($this->Items() as $item) {
             $item->delete();
         }
     }
 
-    /**
-     * @return bool
-     */
-    public function IsProtected()
+    public function IsProtected(): bool
     {
         $protectedMenus = $this->Config()->get('protected_menus');
-        if ($protectedMenus && $this->Slug && in_array($this->Slug, $protectedMenus)) {
+
+        if ($protectedMenus && $this->Slug && in_array($this->Slug, $protectedMenus, true)) {
             return true;
         }
+
         return false;
     }
 
-    /**
-     * @param null $member
-     * @param array $context
-     * @return bool
-     */
-    public function canCreate($member = null, $context = array())
+    public function canCreate(int|Member $member = null, $context = []): bool
     {
-        if (Permission::checkMember($member, 'CMS_ACCESS_TheWebmen\Menustructure\Admin\MenusAdmin')) {
+        if (Permission::checkMember($member, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
             return true;
         }
 
         return parent::canCreate($member);
     }
 
-    /**
-     * @param null $member
-     * @return bool
-     */
-    public function canView($member = null)
+    public function canView(int|Member $member = null): bool
     {
-        if (Permission::checkMember($member, 'CMS_ACCESS_TheWebmen\Menustructure\Admin\MenusAdmin')) {
+        if (Permission::checkMember($member, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
             return true;
         }
 
         return parent::canView($member);
     }
 
-    /**
-     * @param null $member
-     * @return bool
-     */
-    public function canEdit($member = null)
+    public function canEdit(int|Member $member = null): bool
     {
-        if (Permission::checkMember($member, 'CMS_ACCESS_TheWebmen\Menustructure\Admin\MenusAdmin')) {
+        if (Permission::checkMember($member, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
             return true;
         }
 
         return parent::canEdit($member);
     }
 
-    /**
-     * @param null $member
-     * @return bool
-     */
-    public function canDelete($member = null)
+    public function canDelete(int|Member $member = null): bool
     {
         if ($this->IsProtected()) {
             return false;
         }
 
-        if (Permission::checkMember($member, 'CMS_ACCESS_TheWebmen\Menustructure\Admin\MenusAdmin')) {
+        if (Permission::checkMember($member, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
             return true;
         }
 
         return parent::canDelete($member);
     }
 
-    /**
-     * @return \SilverStripe\ORM\FieldType\DBHTMLText
-     */
-    public function forTemplate()
+    public function forTemplate(): DBHTMLText
     {
         return $this->renderWith(self::class);
     }
 
-    /**
-     * @param $slug
-     * @param $template
-     * @return DataObject
-     */
-    public static function MenustructureMenu($slug, $template = false)
+    public static function MenustructureMenu(string $slug, string $template = null): DataObject|DBHTMLText|null
     {
         if (class_exists('SilverStripe\Subsites\Model\Subsite')) {
             $menu = Menu::get()->filter([
                 'Slug' => $slug,
-                'SubsiteID' => \SilverStripe\Subsites\State\SubsiteState::singleton()->getSubsiteId()
+                'SubsiteID' => \SilverStripe\Subsites\State\SubsiteState::singleton()->getSubsiteId(),
             ])->first();
         } else {
             $menu = Menu::get()->filter([
-                'Slug' => $slug
+                'Slug' => $slug,
             ])->first();
         }
-        if ($template && $menu) {
+
+        if (!is_null($template) && $menu) {
             return $menu->renderWith($template);
         }
+
         return $menu;
     }
 
-    /**
-     * @return array
-     */
-    public static function get_template_global_variables()
+    public static function get_template_global_variables(): array
     {
-        return array(
-            'MenustructureMenu'
-        );
+        return [
+            'MenustructureMenu',
+        ];
     }
 }
