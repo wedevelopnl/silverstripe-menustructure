@@ -99,7 +99,10 @@ class Menu extends DataObject implements TemplateGlobalProvider
         return false;
     }
 
-    public function canCreate(int|Member $member = null, $context = []): bool
+    /**
+     * @param null|int|Member $member
+     */
+    public function canCreate($member = null, $context = []): bool
     {
         if (Permission::checkMember($member, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
             return true;
@@ -108,7 +111,10 @@ class Menu extends DataObject implements TemplateGlobalProvider
         return parent::canCreate($member);
     }
 
-    public function canView(int|Member $member = null): bool
+    /**
+     * @param null|int|Member $member
+     */
+    public function canView($member = null): bool
     {
         if (Permission::checkMember($member, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
             return true;
@@ -117,7 +123,10 @@ class Menu extends DataObject implements TemplateGlobalProvider
         return parent::canView($member);
     }
 
-    public function canEdit(int|Member $member = null): bool
+    /**
+     * @param null|int|Member $member
+     */
+    public function canEdit($member = null): bool
     {
         if (Permission::checkMember($member, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
             return true;
@@ -126,7 +135,10 @@ class Menu extends DataObject implements TemplateGlobalProvider
         return parent::canEdit($member);
     }
 
-    public function canDelete(int|Member $member = null): bool
+    /**
+     * @param null|int|Member $member
+     */
+    public function canDelete($member = null): bool
     {
         if ($this->IsProtected()) {
             return false;

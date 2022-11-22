@@ -181,7 +181,10 @@ class MenuItem extends DataObject
         return 'link';
     }
 
-    public function canCreate(?Member $member = null, $context = []): bool
+    /**
+     * @param null|int|Member $member
+     */
+    public function canCreate($member = null, $context = []): bool
     {
         if (Permission::checkMember($member, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
             return true;
@@ -190,6 +193,9 @@ class MenuItem extends DataObject
         return parent::canCreate($member, $context);
     }
 
+    /**
+     * @param null|int|Member $member
+     */
     public function canView($member = null): bool
     {
         if (Permission::checkMember($member, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
@@ -199,6 +205,9 @@ class MenuItem extends DataObject
         return parent::canView($member);
     }
 
+    /**
+     * @param null|int|Member $member
+     */
     public function canEdit($member = null): bool
     {
         if (Permission::checkMember($member, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
@@ -208,6 +217,9 @@ class MenuItem extends DataObject
         return parent::canEdit($member);
     }
 
+    /**
+     * @param null|int|Member $member
+     */
     public function canDelete($member = null): bool
     {
         if (Permission::checkMember($member, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
