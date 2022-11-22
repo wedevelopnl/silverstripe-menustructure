@@ -6,7 +6,9 @@ The menus in this module are also more customizable then the "default" silverstr
 * See `composer.json` requirements
 
 ## Installation
-* `composer require wedevelopnl/silverstripe-menustructure`
+```
+composer require wedevelopnl/silverstripe-menustructure
+```
 
 ## License
 See [License](LICENSE)

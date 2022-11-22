@@ -13,6 +13,7 @@ use SilverStripe\Forms\TextField;
 use SilverStripe\Forms\TreeDropdownField;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\HasManyList;
+use SilverStripe\Security\Member;
 use SilverStripe\Security\Permission;
 use Symbiote\GridFieldExtensions\GridFieldOrderableRows;
 use UncleCheese\DisplayLogic\Forms\Wrapper;
@@ -136,7 +137,7 @@ class MenuItem extends DataObject
     {
         $linkTypes = self::$link_types;
 
-        $this->extend('updateLinkTypes', self::$link_types);
+        $this->extend('updateLinkTypes', $linkTypes);
 
         return $linkTypes;
     }
@@ -180,7 +181,7 @@ class MenuItem extends DataObject
         return 'link';
     }
 
-    public function canCreate(mixed $member = null, $context = []): bool
+    public function canCreate(int|Member $member = null, $context = []): bool
     {
         if (Permission::checkMember($member, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
             return true;
@@ -189,7 +190,7 @@ class MenuItem extends DataObject
         return parent::canCreate($member, $context);
     }
 
-    public function canView(mixed $member = null): bool
+    public function canView(int|Member $member = null): bool
     {
         if (Permission::checkMember($member, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
             return true;
@@ -198,7 +199,7 @@ class MenuItem extends DataObject
         return parent::canView($member);
     }
 
-    public function canEdit(mixed $member = null): bool
+    public function canEdit(int|Member $member = null): bool
     {
         if (Permission::checkMember($member, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
             return true;
@@ -207,7 +208,7 @@ class MenuItem extends DataObject
         return parent::canEdit($member);
     }
 
-    public function canDelete(mixed $member = null): bool
+    public function canDelete(int|Member $member = null): bool
     {
         if (Permission::checkMember($member, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
             return true;
