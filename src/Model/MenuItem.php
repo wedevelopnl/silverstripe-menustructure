@@ -17,6 +17,7 @@ use SilverStripe\Security\Member;
 use SilverStripe\Security\Permission;
 use Symbiote\GridFieldExtensions\GridFieldOrderableRows;
 use UncleCheese\DisplayLogic\Forms\Wrapper;
+use WeDevelop\Menustructure\Admin\MenusAdmin;
 
 /**
  * @property string $LinkType
@@ -186,7 +187,7 @@ class MenuItem extends DataObject
      */
     public function canCreate($member = null, $context = []): bool
     {
-        if (Permission::checkMember($member, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
+        if (Permission::checkMember($member, 'CMS_ACCESS_' . MenusAdmin::class)) {
             return true;
         }
 
@@ -198,7 +199,7 @@ class MenuItem extends DataObject
      */
     public function canView($member = null): bool
     {
-        if (Permission::checkMember($member, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
+        if (Permission::checkMember($member, 'CMS_ACCESS_' . MenusAdmin::class)) {
             return true;
         }
 
@@ -210,7 +211,7 @@ class MenuItem extends DataObject
      */
     public function canEdit($member = null): bool
     {
-        if (Permission::checkMember($member, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
+        if (Permission::checkMember($member, 'CMS_ACCESS_' . MenusAdmin::class)) {
             return true;
         }
 
@@ -222,7 +223,7 @@ class MenuItem extends DataObject
      */
     public function canDelete($member = null): bool
     {
-        if (Permission::checkMember($member, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
+        if (Permission::checkMember($member, 'CMS_ACCESS_' . MenusAdmin::class)) {
             return true;
         }
 

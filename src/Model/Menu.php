@@ -5,7 +5,6 @@ namespace WeDevelop\Menustructure\Model;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\GridField\GridField;
 use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
-use SilverStripe\Forms\HiddenField;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\FieldType\DBHTMLText;
 use SilverStripe\ORM\HasManyList;
@@ -18,7 +17,6 @@ use Symbiote\GridFieldExtensions\GridFieldOrderableRows;
 /**
  * @property string $Title
  * @property string $Slug
- * @property int $SubsiteID
  * @method MenuItem|HasManyList Items()
  */
 class Menu extends DataObject implements TemplateGlobalProvider
@@ -30,7 +28,6 @@ class Menu extends DataObject implements TemplateGlobalProvider
     private static array $db = [
         'Title' => 'Varchar',
         'Slug' => 'Varchar',
-        'SubsiteID' => 'Int',
     ];
 
     /** @config */
@@ -52,13 +49,8 @@ class Menu extends DataObject implements TemplateGlobalProvider
             }
 
             $fields->removeByName([
-                'SubsiteID',
                 'Items',
             ]);
-
-            if (class_exists('SilverStripe\Subsites\Model\Subsite')) {
-                $fields->push(new HiddenField('SubsiteID', 'SubsiteID', \SilverStripe\Subsites\State\SubsiteState::singleton()->getSubsiteId()));
-            }
 
             if ($this->exists()) {
                 $gridConfig = new GridFieldConfig_RecordEditor();
@@ -156,21 +148,14 @@ class Menu extends DataObject implements TemplateGlobalProvider
         return $this->renderWith(self::class);
     }
 
-    public static function MenustructureMenu(string $slug, string $template = null): DataObject|DBHTMLText|null
+    public static function MenustructureMenu(string $slug, string $template = null): Menu
     {
-        if (class_exists('SilverStripe\Subsites\Model\Subsite')) {
-            $menu = Menu::get()->filter([
-                'Slug' => $slug,
-                'SubsiteID' => \SilverStripe\Subsites\State\SubsiteState::singleton()->getSubsiteId(),
-            ])->first();
-        } else {
-            $menu = Menu::get()->filter([
-                'Slug' => $slug,
-            ])->first();
-        }
+        $menu = Menu::get()->filter([
+            'Slug' => $slug,
+        ])->first();
 
-        if (!is_null($template) && $menu) {
-            return $menu->renderWith($template);
+        if (!$menu instanceof Menu) {
+            throw new \Exception('Menu with slug ' . $slug . ' is not found');
         }
 
         return $menu;
