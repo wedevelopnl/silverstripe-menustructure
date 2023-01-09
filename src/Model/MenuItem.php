@@ -237,12 +237,12 @@ class MenuItem extends DataObject
         $now = new \DateTime();
 
         if ($menu && $menu->exists()) {
-            $menu->LastEdited = $now->format('Y-m-d h:m:s');
+            $menu->LastEdited = $now->format('Y-m-d H:i:s');
             $menu->write();
         }
 
         if ($parentItem && $parentItem->exists()) {
-            $parentItem->LastEdited = $now->format('Y-m-d h:m:s');
+            $parentItem->LastEdited = $now->format('Y-m-d H:i:s');
             $parentItem->write();
         }
     }
