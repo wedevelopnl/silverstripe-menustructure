@@ -48,13 +48,17 @@ class MenuItem extends DataObject
     ];
 
     private static $owns = [
-        'File'
+        'File',
     ];
 
     private static $summary_fields = [
         'Title',
         'LinkType',
         'OpenInNewWindow',
+    ];
+
+    private static $cascade_deletes = [
+        'Items',
     ];
 
     private static $default_sort = 'Sort';
@@ -158,7 +162,7 @@ class MenuItem extends DataObject
      */
     public function LinkingMode()
     {
-        if ($this->LinkType == 'page') {
+        if ($this->LinkType === 'page') {
             return Controller::curr()->ID == $this->LinkedPageID ? 'current' : 'link';
         }
         return 'link';
@@ -223,8 +227,44 @@ class MenuItem extends DataObject
     public function onBeforeDelete()
     {
         parent::onBeforeDelete();
-        foreach ($this->Items() as $item) {
-            $item->delete();
+
+        /** @var Menu $menu */
+        $menu = $this->Menu();
+
+        /** @var MenuItem $parentItem */
+        $parentItem = $this->ParentItem();
+
+        $now = new \DateTime();
+
+        if ($menu && $menu->exists()) {
+            $menu->LastEdited = $now->format('Y-m-d H:i:s');
+            $menu->write();
+        }
+
+        if ($parentItem && $parentItem->exists()) {
+            $parentItem->LastEdited = $now->format('Y-m-d H:i:s');
+            $parentItem->write();
+        }
+    }
+
+    public function onAfterWrite()
+    {
+        parent::onAfterWrite();
+
+        /** @var Menu $menu */
+        $menu = $this->Menu();
+
+        /** @var MenuItem $parentItem */
+        $parentItem = $this->ParentItem();
+
+        if ($menu && $menu->exists()) {
+            $menu->LastEdited = $this->LastEdited;
+            $menu->write();
+        }
+
+        if ($parentItem && $parentItem->exists()) {
+            $parentItem->LastEdited = $this->LastEdited;
+            $parentItem->write();
         }
     }
 }
