@@ -59,7 +59,6 @@ class MenuItem extends DataObject
         'Items' => MenuItem::class,
     ];
 
-    /** @config */
     private static array $owns = [
         'File',
     ];
@@ -70,7 +69,7 @@ class MenuItem extends DataObject
         'LinkType',
         'OpenInNewWindow',
     ];
-
+    
     private static array $link_types = [
         'page' => 'Page',
         'url' => 'URL',
@@ -233,8 +232,44 @@ class MenuItem extends DataObject
     public function onBeforeDelete(): void
     {
         parent::onBeforeDelete();
-        foreach ($this->Items() as $item) {
-            $item->delete();
+
+        /** @var Menu $menu */
+        $menu = $this->Menu();
+
+        /** @var MenuItem $parentItem */
+        $parentItem = $this->ParentItem();
+
+        $now = new \DateTime();
+
+        if ($menu && $menu->exists()) {
+            $menu->LastEdited = $now->format('Y-m-d H:i:s');
+            $menu->write();
+        }
+
+        if ($parentItem && $parentItem->exists()) {
+            $parentItem->LastEdited = $now->format('Y-m-d H:i:s');
+            $parentItem->write();
+        }
+    }
+
+    public function onAfterWrite()
+    {
+        parent::onAfterWrite();
+
+        /** @var Menu $menu */
+        $menu = $this->Menu();
+
+        /** @var MenuItem $parentItem */
+        $parentItem = $this->ParentItem();
+
+        if ($menu && $menu->exists()) {
+            $menu->LastEdited = $this->LastEdited;
+            $menu->write();
+        }
+
+        if ($parentItem && $parentItem->exists()) {
+            $parentItem->LastEdited = $this->LastEdited;
+            $parentItem->write();
         }
     }
 
