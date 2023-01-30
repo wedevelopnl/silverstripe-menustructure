@@ -148,7 +148,11 @@ class Menu extends DataObject implements TemplateGlobalProvider
         return $this->renderWith(self::class);
     }
 
-    public static function MenustructureMenu(string $slug, string $template = null): Menu
+    /**
+     * @return DataObject|DBHTMLText|Menu|null
+     * @throws \Exception
+     */
+    public static function MenustructureMenu(string $slug, string $template = null)
     {
         $menu = Menu::get()->filter([
             'Slug' => $slug,
@@ -158,8 +162,13 @@ class Menu extends DataObject implements TemplateGlobalProvider
             throw new \Exception('Menu with slug ' . $slug . ' is not found');
         }
 
+        if ($template && $menu) {
+            return $menu->renderWith($template);
+        }
+
         return $menu;
     }
+
 
     public static function get_template_global_variables(): array
     {
