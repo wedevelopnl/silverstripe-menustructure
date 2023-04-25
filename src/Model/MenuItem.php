@@ -8,7 +8,7 @@ use SilverStripe\Control\Controller;
 use SilverStripe\Forms\DropdownField;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\GridField\GridField;
-use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
+use SilverStripe\Forms\GridField\GridFieldConfig_RelationEditor;
 use SilverStripe\Forms\TextField;
 use SilverStripe\Forms\TreeDropdownField;
 use SilverStripe\ORM\DataObject;
@@ -69,7 +69,7 @@ class MenuItem extends DataObject
         'LinkType',
         'OpenInNewWindow',
     ];
-    
+
     private static array $link_types = [
         'page' => 'Page',
         'url' => 'URL',
@@ -124,7 +124,7 @@ class MenuItem extends DataObject
 
             $fields->removeByName('Items');
             if ($this->exists()) {
-                $gridConfig = new GridFieldConfig_RecordEditor();
+                $gridConfig = new GridFieldConfig_RelationEditor();
                 $gridConfig->addComponent(GridFieldOrderableRows::create());
                 $fields->addFieldToTab('Root.Main', GridField::create('Items', 'Items', $this->Items(), $gridConfig));
             }
