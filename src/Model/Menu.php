@@ -4,7 +4,7 @@ namespace WeDevelop\Menustructure\Model;
 
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\GridField\GridField;
-use SilverStripe\Forms\GridField\GridFieldConfig_RecordEditor;
+use SilverStripe\Forms\GridField\GridFieldConfig_RelationEditor;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\FieldType\DBHTMLText;
 use SilverStripe\ORM\HasManyList;
@@ -53,7 +53,7 @@ class Menu extends DataObject implements TemplateGlobalProvider
             ]);
 
             if ($this->exists()) {
-                $gridConfig = new GridFieldConfig_RecordEditor();
+                $gridConfig = new GridFieldConfig_RelationEditor();
                 $gridConfig->addComponent(GridFieldOrderableRows::create());
                 $fields->addFieldToTab('Root.Main', GridField::create('Items', 'Items', $this->Items(), $gridConfig));
             }
