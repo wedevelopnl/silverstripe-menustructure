@@ -2,7 +2,7 @@
     <ul>
         <% loop $Items %>
             <li>
-                <% if $Link %>
+                <% if $Link && $LinkType != "no-link" %>
                     <a href="$Link"<% if $OpenInNewWindow %> target="_blank"<% end_if %>>$Title</a>
                 <% else %>
                     <span>$Title</span>
