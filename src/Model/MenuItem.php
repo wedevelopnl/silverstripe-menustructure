@@ -33,8 +33,11 @@ use WeDevelop\Menustructure\Admin\MenusAdmin;
 class MenuItem extends DataObject
 {
     private const LINK_TYPE_PAGE = 'page';
+
     private const LINK_TYPE_URL = 'url';
+
     private const LINK_TYPE_FILE = 'file';
+    
     private const LINK_TYPE_NO_LINK = 'no-link';
 
     /** @config */
