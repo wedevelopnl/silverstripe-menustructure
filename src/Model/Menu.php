@@ -12,6 +12,7 @@ use SilverStripe\Security\Member;
 use SilverStripe\Security\Permission;
 use SilverStripe\View\Parsers\URLSegmentFilter;
 use SilverStripe\View\TemplateGlobalProvider;
+use SilverStripe\View\ViewableData;
 use Symbiote\GridFieldExtensions\GridFieldOrderableRows;
 
 /**
@@ -148,19 +149,11 @@ class Menu extends DataObject implements TemplateGlobalProvider
         return $this->renderWith(self::class);
     }
 
-    /**
-     * @return DataObject|DBHTMLText|Menu|null
-     * @throws \Exception
-     */
-    public static function MenustructureMenu(string $slug, string $template = null)
+    public static function MenustructureMenu(string $slug, string $template = null): null|Menu|ViewableData
     {
         $menu = Menu::get()->filter([
             'Slug' => $slug,
         ])->first();
-
-        if (!$menu instanceof Menu) {
-            throw new \Exception('Menu with slug ' . $slug . ' is not found');
-        }
 
         if ($template && $menu) {
             return $menu->renderWith($template);
