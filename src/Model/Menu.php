@@ -155,7 +155,7 @@ class Menu extends DataObject implements TemplateGlobalProvider
             'Slug' => $slug,
         ])->first();
 
-        if ($template && $menu) {
+        if ($template && $menu instanceof Menu) {
             return $menu->renderWith($template);
         }
 
