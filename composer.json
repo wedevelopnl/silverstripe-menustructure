@@ -14,19 +14,19 @@
     "minimum-stability": "dev",
     "prefer-stable": true,
     "require": {
-        "php": ">=8.1",
-        "silverstripe/cms": "^4@stable",
-        "silverstripe/vendor-plugin": "^1.0",
-        "silverstripe/display-logic": "^2.0",
-        "symbiote/silverstripe-gridfieldextensions": "^3.5"
+        "php": "^8.1",
+        "silverstripe/cms": "^5@stable",
+        "silverstripe/vendor-plugin": "^2.0",
+        "silverstripe/display-logic": "^3.0",
+        "symbiote/silverstripe-gridfieldextensions": "^4.0.2"
     },
     "require-dev": {
-        "friendsofphp/php-cs-fixer": "^3.4"
+        "friendsofphp/php-cs-fixer": "^3.20"
     },
     "extra": {
         "installer-name": "silverstripe-menustructure",
         "branch-alias": {
-            "dev-main": "3.x-dev"
+            "dev-main": "4.x-dev"
         }
     },
     "autoload": {
