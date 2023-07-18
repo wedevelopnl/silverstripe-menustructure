@@ -140,7 +140,9 @@ class MenuItem extends DataObject
 
     private function getLinkTypes(): array
     {
-        $this->extend('updateLinkTypes', self::$link_types);
+        $linkTypes = self::$link_types;
+
+        $this->extend('updateLinkTypes', $linkTypes);
 
         return $linkTypes;
     }
