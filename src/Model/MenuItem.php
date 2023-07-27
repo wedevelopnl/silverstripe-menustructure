@@ -27,7 +27,7 @@ use WeDevelop\Menustructure\Admin\MenusAdmin;
  * @property int $LinkedPageID
  * @method File File()
  * @method MenuItem ParentItem()
- * @method MenuItem|HasManyList Items()
+ * @method HasManyList Items()
  * @method SiteTree LinkedPage()
  */
 class MenuItem extends DataObject
