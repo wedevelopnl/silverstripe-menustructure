@@ -18,7 +18,7 @@ use Symbiote\GridFieldExtensions\GridFieldOrderableRows;
 /**
  * @property string $Title
  * @property string $Slug
- * @method MenuItem|HasManyList Items()
+ * @method HasManyList Items()
  */
 class Menu extends DataObject implements TemplateGlobalProvider
 {
@@ -128,9 +128,6 @@ class Menu extends DataObject implements TemplateGlobalProvider
         return parent::canEdit($member);
     }
 
-    /**
-     * @param null|int|Member $member
-     */
     public function canDelete($member = null): bool
     {
         if ($this->IsProtected()) {
@@ -149,24 +146,29 @@ class Menu extends DataObject implements TemplateGlobalProvider
         return $this->renderWith(self::class);
     }
 
-    public static function MenustructureMenu(string $slug, string $template = null): null|Menu|ViewableData
+    public static function ViewableMenustructureMenu(string $slug, string $template): ?ViewableData
     {
-        $menu = Menu::get()->filter([
-            'Slug' => $slug,
-        ])->first();
+        $menu = self::MenustructureMenu($slug);
 
-        if ($template && $menu instanceof Menu) {
-            return $menu->renderWith($template);
+        if ($menu instanceof Menu) {
+            return $menu->forTemplate($template);
         }
 
         return $menu;
     }
 
+    public static function MenustructureMenu(string $slug): ?Menu
+    {
+        return Menu::get()->filter([
+            'Slug' => $slug,
+        ])->first();
+    }
 
     public static function get_template_global_variables(): array
     {
         return [
             'MenustructureMenu',
+            'ViewableMenustructureMenu',
         ];
     }
 }
