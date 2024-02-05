@@ -144,7 +144,7 @@ class MenuItem extends DataObject
 
     public function getLink(): string
     {
-        $link = '';
+        $link = null;
 
         switch ($this->LinkType) {
             case 'url':
@@ -169,7 +169,7 @@ class MenuItem extends DataObject
 
         $this->extend('updateLink', $link);
 
-        return $link;
+        return $link ?? '';
     }
 
     public function LinkingMode(): string
