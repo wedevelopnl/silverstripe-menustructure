@@ -8,7 +8,7 @@ use WeDevelop\Menustructure\Model\MenuItem;
 
 class MigrateMenuNamespacesTask extends BuildTask
 {
-    protected string $title = 'Migrate menu namespaces';
+    protected $title = 'Migrate menu namespaces';
     private static string $segment = 'migrate-menu-namespaces';
     protected string $description = 'Migrate menu (items) namespaces from old to new namespace';
 
