@@ -150,7 +150,7 @@ class MenuItem extends DataObject
         return $linkTypes;
     }
 
-    public function getLink(): string
+    public function getLink(): ?string
     {
         $link = match ($this->LinkType) {
             'url' => $this->Url,
