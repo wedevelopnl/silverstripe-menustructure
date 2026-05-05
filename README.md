@@ -5,6 +5,12 @@ The menus in this module are also more customizable then the "default" silverstr
 ## Requirements
 * See `composer.json` requirements
 
+## Breaking changes (6.x)
+
+* `MenuItem::LinkType` is now backed by the `WeDevelop\Menustructure\Model\LinkType` PHP enum and stored as a MySQL `Enum` column. Existing rows are preserved (`page`/`url`/`file`/`no-link` map onto the matching cases); a `dev/build` issues an `ALTER TABLE` to swap `Varchar` for the constrained enum type.
+* The `updateLinkTypes` extension hook on `MenuItem` and the `link_types` configuration array have been removed. Custom link types should be added by extending the `LinkType` enum upstream — downstream modules can no longer inject new types at runtime.
+* A new `breakpoint` link type has been added for templates that need a non-clickable structural marker (separate from `no-link`, which renders as a labelled span).
+
 ## Installation
 ```
 composer require wedevelopnl/silverstripe-menustructure

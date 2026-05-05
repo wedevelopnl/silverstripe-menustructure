@@ -45,6 +45,13 @@ class MenuItemTest extends SapphireTest
         $this->assertSame('', $item->getLink());
     }
 
+    public function testGetLinkReturnsEmptyStringForBreakpointType(): void
+    {
+        $item = $this->objFromFixture(MenuItem::class, 'breakpointLink');
+
+        $this->assertSame('', $item->getLink());
+    }
+
     public function testGetLinkReturnsFileLinkForFileType(): void
     {
         $item = $this->objFromFixture(MenuItem::class, 'fileLink');

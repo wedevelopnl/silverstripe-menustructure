@@ -63,3 +63,8 @@ WeDevelop\Menustructure\Model\MenuItem:
     LinkType: 'no-link'
     Sort: 5
     Menu: =>WeDevelop\Menustructure\Model\Menu.default
+  breakpointLink:
+    Title: 'Column break'
+    LinkType: 'breakpoint'
+    Sort: 6
+    Menu: =>WeDevelop\Menustructure\Model\Menu.default

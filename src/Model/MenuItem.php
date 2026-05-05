@@ -36,21 +36,13 @@ use WeDevelop\Menustructure\Admin\MenusAdmin;
  */
 class MenuItem extends DataObject
 {
-    private const string LINK_TYPE_PAGE = 'page';
-
-    private const string LINK_TYPE_URL = 'url';
-
-    private const string LINK_TYPE_FILE = 'file';
-
-    private const string LINK_TYPE_NO_LINK = 'no-link';
-
     /** @config */
     private static string $table_name = 'Menustructure_MenuItem';
 
     /** @config */
     private static array $db = [
         'Title' => 'Varchar',
-        'LinkType' => 'Varchar',
+        'LinkType' => "Enum('page,url,file,no-link,breakpoint', 'no-link')",
         'Url' => 'Varchar(255)',
         'OpenInNewWindow' => 'Boolean',
         'Sort' => 'Int',
@@ -82,13 +74,6 @@ class MenuItem extends DataObject
         'OpenInNewWindow',
     ];
 
-    private static array $link_types = [
-        self::LINK_TYPE_PAGE => 'Page',
-        self::LINK_TYPE_URL => 'URL',
-        self::LINK_TYPE_FILE => 'File',
-        self::LINK_TYPE_NO_LINK => 'Not linked',
-    ];
-
     /** @config */
     private static string $default_sort = 'Sort';
 
@@ -108,27 +93,27 @@ class MenuItem extends DataObject
                 'MenuID',
             ]);
 
-            $fields->replaceField('LinkType', DropdownField::create('LinkType', $this->fieldLabel('LinkType'), $this->getLinkTypes()));
+            $fields->replaceField('LinkType', DropdownField::create('LinkType', $this->fieldLabel('LinkType'), LinkType::dropdownSource()));
             $fields->replaceField('LinkedPageID', $linkedPageWrapper = Wrapper::create(TreeDropdownField::create('LinkedPageID', $this->fieldLabel('LinkedPage'), SiteTree::class)));
 
-            $linkedPageWrapper->displayIf('LinkType')->isEqualTo(self::LINK_TYPE_PAGE);
+            $linkedPageWrapper->displayIf('LinkType')->isEqualTo(LinkType::Page->value);
 
             $fileField = $fields->dataFieldByName('File');
-            $fileField?->displayIf('LinkType')->isEqualTo(self::LINK_TYPE_FILE);
+            $fileField?->displayIf('LinkType')->isEqualTo(LinkType::File->value);
 
             $urlField = $fields->dataFieldByName('Url');
-            $urlField?->displayIf('LinkType')->isEqualTo(self::LINK_TYPE_URL);
+            $urlField?->displayIf('LinkType')->isEqualTo(LinkType::Url->value);
 
             $openInNewWindow = $fields->dataFieldByName('OpenInNewWindow');
-            $openInNewWindow?->displayIf('LinkType')->isEqualTo(self::LINK_TYPE_PAGE)
-                ->orIf('LinkType')->isEqualTo(self::LINK_TYPE_URL)
-                ->orIf('LinkType')->isEqualTo(self::LINK_TYPE_FILE);
+            $openInNewWindow?->displayIf('LinkType')->isEqualTo(LinkType::Page->value)
+                ->orIf('LinkType')->isEqualTo(LinkType::Url->value)
+                ->orIf('LinkType')->isEqualTo(LinkType::File->value);
 
             if (self::config()->get('enable_query_string')) {
                 /** @var TextField|null $queryStringField */
                 $queryStringField = $fields->dataFieldByName('QueryString');
                 if ($queryStringField !== null) {
-                    $queryStringField->displayIf('LinkType')->isEqualTo(self::LINK_TYPE_PAGE);
+                    $queryStringField->displayIf('LinkType')->isEqualTo(LinkType::Page->value);
                     $queryStringField->setDescription('Example: <code>foo=bar&john=doe</code>');
                     $fields->addFieldToTab('Root.Main', $queryStringField);
                 }
@@ -139,7 +124,7 @@ class MenuItem extends DataObject
             if (self::config()->get('enable_page_anchor')) {
                 $anchorField = $fields->dataFieldByName('AnchorText');
                 if ($anchorField !== null) {
-                    $anchorField->displayIf('LinkType')->isEqualTo(self::LINK_TYPE_PAGE);
+                    $anchorField->displayIf('LinkType')->isEqualTo(LinkType::Page->value);
                     $fields->addFieldToTab('Root.Main', $anchorField);
                 }
             } else {
@@ -161,33 +146,22 @@ class MenuItem extends DataObject
         return parent::getCMSFields();
     }
 
-    /**
-     * @return array<string, string>
-     */
-    private function getLinkTypes(): array
-    {
-        /** @var array<string, string> $linkTypes */
-        $linkTypes = self::config()->get('link_types');
-
-        $this->extend('updateLinkTypes', $linkTypes);
-
-        return $linkTypes;
-    }
-
     public function getLink(): string
     {
-        $link = match ($this->LinkType) {
-            self::LINK_TYPE_URL => $this->Url,
-            self::LINK_TYPE_PAGE => $this->LinkedPage()->exists() ? (string)$this->LinkedPage()->Link() : '',
-            self::LINK_TYPE_FILE => $this->File()->exists() ? (string)$this->File()->Link() : '',
-            default => '',
+        $type = LinkType::tryFrom($this->LinkType ?? '');
+
+        $link = match ($type) {
+            LinkType::Url => $this->Url,
+            LinkType::Page => $this->LinkedPage()->exists() ? (string)$this->LinkedPage()->Link() : '',
+            LinkType::File => $this->File()->exists() ? (string)$this->File()->Link() : '',
+            LinkType::NoLink, LinkType::Breakpoint, null => '',
         };
 
-        if ($this->LinkType === self::LINK_TYPE_PAGE && self::config()->get('enable_query_string') && $this->QueryString) {
+        if ($type === LinkType::Page && self::config()->get('enable_query_string') && $this->QueryString) {
             $link = sprintf('%s?%s', $link, $this->QueryString);
         }
 
-        if ($this->LinkType === self::LINK_TYPE_PAGE && self::config()->get('enable_page_anchor') && $this->AnchorText) {
+        if ($type === LinkType::Page && self::config()->get('enable_page_anchor') && $this->AnchorText) {
             $link = sprintf('%s#%s', $link, $this->AnchorText);
         }
 
@@ -198,7 +172,7 @@ class MenuItem extends DataObject
 
     public function LinkingMode(): string
     {
-        if ($this->LinkType !== self::LINK_TYPE_PAGE) {
+        if ($this->LinkType !== LinkType::Page->value) {
             return 'link';
         }
 
