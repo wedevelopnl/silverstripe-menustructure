@@ -15,6 +15,7 @@ use SilverStripe\Security\Permission;
 use SilverStripe\View\Parsers\URLSegmentFilter;
 use SilverStripe\View\TemplateGlobalProvider;
 use Symbiote\GridFieldExtensions\GridFieldOrderableRows;
+use WeDevelop\Menustructure\Admin\MenusAdmin;
 
 /**
  * @property string $Title
@@ -92,7 +93,7 @@ class Menu extends DataObject implements TemplateGlobalProvider
     #[Override]
     public function canCreate(mixed $member = null, mixed $context = []): bool
     {
-        if (Permission::checkMember($member ?? 0, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
+        if (Permission::checkMember($member ?? 0, 'CMS_ACCESS_' . MenusAdmin::class)) {
             return true;
         }
 
@@ -102,7 +103,7 @@ class Menu extends DataObject implements TemplateGlobalProvider
     #[Override]
     public function canView(mixed $member = null): bool
     {
-        if (Permission::checkMember($member ?? 0, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
+        if (Permission::checkMember($member ?? 0, 'CMS_ACCESS_' . MenusAdmin::class)) {
             return true;
         }
 
@@ -112,7 +113,7 @@ class Menu extends DataObject implements TemplateGlobalProvider
     #[Override]
     public function canEdit(mixed $member = null): bool
     {
-        if (Permission::checkMember($member ?? 0, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
+        if (Permission::checkMember($member ?? 0, 'CMS_ACCESS_' . MenusAdmin::class)) {
             return true;
         }
 
@@ -126,7 +127,7 @@ class Menu extends DataObject implements TemplateGlobalProvider
             return false;
         }
 
-        if (Permission::checkMember($member ?? 0, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
+        if (Permission::checkMember($member ?? 0, 'CMS_ACCESS_' . MenusAdmin::class)) {
             return true;
         }
 
