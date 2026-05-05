@@ -2,6 +2,7 @@
 
 namespace WeDevelop\Menustructure\Tests\Model;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use SilverStripe\CMS\Model\SiteTree;
 use SilverStripe\Control\Controller;
 use SilverStripe\Control\HTTPRequest;
@@ -12,9 +13,7 @@ use SilverStripe\ORM\DB;
 use WeDevelop\Menustructure\Model\Menu;
 use WeDevelop\Menustructure\Model\MenuItem;
 
-/**
- * @covers \WeDevelop\Menustructure\Model\MenuItem
- */
+#[CoversClass(MenuItem::class)]
 class MenuItemTest extends SapphireTest
 {
     protected static $fixture_file = '../fixtures/MenuItemTest.yml';

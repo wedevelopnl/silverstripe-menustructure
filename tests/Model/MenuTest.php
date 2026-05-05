@@ -2,14 +2,13 @@
 
 namespace WeDevelop\Menustructure\Tests\Model;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Dev\SapphireTest;
 use WeDevelop\Menustructure\Model\Menu;
 use WeDevelop\Menustructure\Model\MenuItem;
 
-/**
- * @covers \WeDevelop\Menustructure\Model\Menu
- */
+#[CoversClass(Menu::class)]
 class MenuTest extends SapphireTest
 {
     protected static $fixture_file = '../fixtures/MenuTest.yml';
