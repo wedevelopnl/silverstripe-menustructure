@@ -1,18 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace WeDevelop\Menustructure\Model;
 
+use Override;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\GridField\GridField;
 use SilverStripe\Forms\GridField\GridFieldConfig_RelationEditor;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\FieldType\DBHTMLText;
 use SilverStripe\ORM\HasManyList;
-use SilverStripe\Security\Member;
 use SilverStripe\Security\Permission;
 use SilverStripe\View\Parsers\URLSegmentFilter;
 use SilverStripe\View\TemplateGlobalProvider;
-use SilverStripe\View\ViewableData;
 use Symbiote\GridFieldExtensions\GridFieldOrderableRows;
 
 /**
@@ -42,11 +43,12 @@ class Menu extends DataObject implements TemplateGlobalProvider
         'Slug',
     ];
 
+    #[Override]
     public function getCMSFields(): FieldList
     {
-        $this->beforeUpdateCMSFields(function ($fields) {
+        $this->beforeUpdateCMSFields(function (FieldList $fields): void {
             if ($this->IsProtected()) {
-                $fields->dataFieldByName('Slug')->setReadonly(true);
+                $fields->dataFieldByName('Slug')?->setReadonly(true);
             }
 
             $fields->removeByName([
@@ -63,6 +65,7 @@ class Menu extends DataObject implements TemplateGlobalProvider
         return parent::getCMSFields();
     }
 
+    #[Override]
     public function onBeforeWrite(): void
     {
         parent::onBeforeWrite();
@@ -72,6 +75,7 @@ class Menu extends DataObject implements TemplateGlobalProvider
         }
     }
 
+    #[Override]
     public function onBeforeDelete(): void
     {
         parent::onBeforeDelete();
@@ -84,19 +88,14 @@ class Menu extends DataObject implements TemplateGlobalProvider
     public function IsProtected(): bool
     {
         $protectedMenus = static::config()->get('protected_menus');
-
-        if (is_array($protectedMenus) && $this->Slug && in_array($this->Slug, $protectedMenus, true)) {
-            return true;
-        }
-
-        return false;
+        return is_array($protectedMenus) && $this->Slug && in_array($this->Slug, $protectedMenus, true);
     }
 
     /**
-     * @param Member|null $member
-     * @param array<string, mixed> $context
+     * @param mixed[] $context
      */
-    public function canCreate($member = null, $context = []): bool
+    #[Override]
+    public function canCreate(mixed $member = null, mixed $context = []): bool
     {
         if (Permission::checkMember($member ?? 0, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
             return true;
@@ -105,10 +104,8 @@ class Menu extends DataObject implements TemplateGlobalProvider
         return parent::canCreate($member, $context);
     }
 
-    /**
-     * @param Member|null $member
-     */
-    public function canView($member = null): bool
+    #[Override]
+    public function canView(mixed $member = null): bool
     {
         if (Permission::checkMember($member ?? 0, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
             return true;
@@ -117,10 +114,8 @@ class Menu extends DataObject implements TemplateGlobalProvider
         return parent::canView($member);
     }
 
-    /**
-     * @param Member|null $member
-     */
-    public function canEdit($member = null): bool
+    #[Override]
+    public function canEdit(mixed $member = null): bool
     {
         if (Permission::checkMember($member ?? 0, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
             return true;
@@ -129,10 +124,8 @@ class Menu extends DataObject implements TemplateGlobalProvider
         return parent::canEdit($member);
     }
 
-    /**
-     * @param Member|null $member
-     */
-    public function canDelete($member = null): bool
+    #[Override]
+    public function canDelete(mixed $member = null): bool
     {
         if ($this->IsProtected()) {
             return false;
@@ -145,20 +138,21 @@ class Menu extends DataObject implements TemplateGlobalProvider
         return parent::canDelete($member);
     }
 
-    public function forTemplate(): DBHTMLText
+    #[Override]
+    public function forTemplate(): string
     {
-        return $this->renderWith(self::class);
+        return (string)$this->renderWith(self::class);
     }
 
-    public static function ViewableMenustructureMenu(string $slug, string $template): ?ViewableData
+    public static function ViewableMenustructureMenu(string $slug, string $template): ?DBHTMLText
     {
         $menu = self::MenustructureMenu($slug);
 
-        if ($menu instanceof Menu) {
-            return $menu->renderWith($template);
+        if (!$menu instanceof Menu) {
+            return null;
         }
 
-        return $menu;
+        return $menu->renderWith($template);
     }
 
     public static function MenustructureMenu(string $slug): ?Menu

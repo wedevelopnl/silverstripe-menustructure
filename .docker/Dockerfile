@@ -1,4 +1,4 @@
-ARG PHP_VERSION=8.2
+ARG PHP_VERSION=8.3
 FROM dunglas/frankenphp:php${PHP_VERSION}
 
 RUN install-php-extensions \
@@ -29,6 +29,7 @@ RUN mkdir -p /app/src /app/_config \
 COPY app/_config/ /app/_config/
 COPY app/phpunit.xml.dist /app/phpunit.xml.dist
 COPY app/phpstan.neon.dist /app/phpstan.neon.dist
+COPY app/rector.php /app/rector.php
 
 COPY Caddyfile /etc/caddy/Caddyfile
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh

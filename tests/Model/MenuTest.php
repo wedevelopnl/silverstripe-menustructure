@@ -4,7 +4,6 @@ namespace WeDevelop\Menustructure\Tests\Model;
 
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Dev\SapphireTest;
-use SilverStripe\ORM\FieldType\DBHTMLText;
 use WeDevelop\Menustructure\Model\Menu;
 use WeDevelop\Menustructure\Model\MenuItem;
 
@@ -149,11 +148,9 @@ class MenuTest extends SapphireTest
 
         $rendered = $menu->forTemplate();
 
-        $this->assertInstanceOf(DBHTMLText::class, $rendered);
-        $html = (string)$rendered;
-        $this->assertStringContainsString('<nav>', $html);
-        $this->assertStringContainsString('Home', $html);
-        $this->assertStringContainsString('About', $html);
+        $this->assertStringContainsString('<nav>', $rendered);
+        $this->assertStringContainsString('Home', $rendered);
+        $this->assertStringContainsString('About', $rendered);
     }
 
     public function testOnBeforeDeleteCascadesToChildItems(): void

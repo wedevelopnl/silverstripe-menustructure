@@ -1,6 +1,6 @@
 COMPOSE := docker compose -f .docker/compose.yml
 
-.PHONY: up down destroy build ensure-up test coverage analyse test-cs fix-cs flush dev-build sh
+.PHONY: up down destroy build ensure-up test coverage analyse rector rector-dry flush dev-build sh
 
 ## Generate .docker/.env with deterministic ports (auto-runs if missing)
 .docker/.env:
@@ -42,13 +42,13 @@ coverage: ensure-up
 analyse: ensure-up
 	$(COMPOSE) exec app vendor/bin/phpstan analyse -c phpstan.neon.dist --memory-limit=512M
 
-## Run php-cs-fixer dry-run (was: `make test` in the old setup)
-test-cs: ensure-up
-	$(COMPOSE) exec app sh -c 'cd /module && /app/vendor/bin/php-cs-fixer fix --diff --dry-run --config=.php-cs-fixer.php'
+## Run Rector refactoring (applies changes)
+rector: ensure-up
+	$(COMPOSE) exec app vendor/bin/rector process
 
-## Auto-fix code style
-fix-cs: ensure-up
-	$(COMPOSE) exec app sh -c 'cd /module && /app/vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.php'
+## Run Rector in dry-run mode (preview only)
+rector-dry: ensure-up
+	$(COMPOSE) exec app vendor/bin/rector process --dry-run
 
 ## Clear SilverStripe cache
 flush: ensure-up

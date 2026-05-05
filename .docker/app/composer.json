@@ -2,7 +2,7 @@
     "minimum-stability": "dev",
     "prefer-stable": true,
     "require": {
-        "silverstripe/recipe-cms": "^5.0",
+        "silverstripe/recipe-cms": "^6.0",
         "wedevelopnl/silverstripe-menustructure": "*"
     },
     "repositories": [
@@ -21,10 +21,12 @@
     },
     "require-dev": {
         "cambis/silverstan": "^2.1",
-        "friendsofphp/php-cs-fixer": "^3.50",
         "phpstan/extension-installer": "^1.4",
         "phpstan/phpstan": "^2.1",
-        "phpunit/phpunit": "^9.6"
+        "phpstan/phpstan-deprecation-rules": "^2.0",
+        "phpunit/phpunit": "^11.3",
+        "tomasvotruba/type-coverage": "^2.0",
+        "wernerkrauss/silverstripe-rector": "^1.0"
     },
     "autoload-dev": {
         "psr-4": {

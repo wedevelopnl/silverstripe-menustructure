@@ -1,16 +1,37 @@
 # Silverstripe Menustructure configuration
+
 ## Usage
+
 Render a menu in any template using:
+
 ```
 $MenustructureMenu('menu-slug')
 ```
 
+This returns the matching `Menu` and renders it through the bundled
+`templates/WeDevelop/Menustructure/Model/Menu.ss` template.
+
+## Render with a custom template
+
+Use the `ViewableMenustructureMenu` helper to render with your own template:
+
+```
+$ViewableMenustructureMenu('menu-slug', 'Path/To/CustomMenu')
+```
+
+The first argument is the menu's slug; the second is the dot/slash-separated
+template path (resolved against your project + module template paths).
+
+You can use the bundled `Menu.ss` as a starting point. Iterate `$Items` and
+check `$LinkType != "no-link"` before emitting `<a href="$Link">`.
+
 ## Protect menus from deletion
-You can add some custom configuration file (eg. `app/_config/menu.yml)` to your project to protect menus.\
-See the example below;
+
+Add a configuration file (eg. `app/_config/menus.yml`) to your project to mark
+menus that editors should not be able to delete:
 
 ```yaml
-TheWebmen\Menustructure\Model\Menu:
+WeDevelop\Menustructure\Model\Menu:
   protected_menus:
     - 'main-menu'
     - 'footer-col1'
@@ -18,18 +39,22 @@ TheWebmen\Menustructure\Model\Menu:
     - 'footer-col3'
 ```
 
-## Customizing
-### Templates
-It is possible to render the menus in custom templates.
-De default template is found in this module under `templates/TheWebmen/Menustructure/Model/Menu.ss`.
+When a menu's `Slug` matches an entry in `protected_menus`:
 
-You can use this code as example for custom menus.
+- `canDelete()` returns `false` (the delete action disappears in the CMS).
+- The `Slug` field becomes read-only in the menu's edit form.
 
-### Render the custom menu
+## Optional `MenuItem` features
 
-Render a menu using a custom template using:
+Both default to `false`. Enable per project:
+
+```yaml
+WeDevelop\Menustructure\Model\MenuItem:
+  enable_query_string: true
+  enable_page_anchor: true
 ```
-$MenustructureMenu('menu-slug', 'Menus/MainMenu')
-```
 
-Here the first argument is the slug of the menu and the second argument is the template you want to use.
+- `enable_query_string` — exposes a `QueryString` field for `page`-type items
+  and appends `?<value>` to the rendered link.
+- `enable_page_anchor` — exposes an `AnchorText` field for `page`-type items
+  and appends `#<value>` to the rendered link.

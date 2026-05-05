@@ -4,12 +4,11 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        PHP_VERSION: ${PHP_VERSION:-8.2}
+        PHP_VERSION: ${PHP_VERSION:-8.3}
     ports:
       - "${WEB_PORT}:443"
     volumes:
       - ../composer.json:/module/composer.json:ro
-      - ../.php-cs-fixer.php:/module/.php-cs-fixer.php:ro
       - ../src:/module/src
       - ../tests:/module/tests
       - ../_config:/module/_config:ro

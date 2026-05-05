@@ -4,9 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A SilverStripe CMS module (`wedevelopnl/silverstripe-menustructure`) that lets editors define multiple named, nested menus in the CMS and render them in templates by slug. PHP 8.1+, SilverStripe CMS `^5`, PSR-4 namespace `WeDevelop\Menustructure\` rooted at `src/`.
+A SilverStripe CMS module (`wedevelopnl/silverstripe-menustructure`) that lets editors define multiple named, nested menus in the CMS and render them in templates by slug. PHP 8.3+, SilverStripe CMS `^6`, PSR-4 namespace `WeDevelop\Menustructure\` rooted at `src/`.
 
-The repo *is* the package — there is no surrounding application. The dev environment under `.docker/` builds a throwaway SilverStripe app (recipe-cms `^5`) that mounts the module at `/module` and pulls it in via a path repository, modelled on `silverstripe-grid/.docker/` and `silverstripe-media-field/.docker/`. SS6 compat is the next branch milestone — the dev infra is intentionally pinned to SS5 until that work begins.
+The repo *is* the package — there is no surrounding application. The dev environment under `.docker/` builds a throwaway SilverStripe app (recipe-cms `^6`) that mounts the module at `/module` and pulls it in via a path repository, modelled on `silverstripe-grid/.docker/`. The dev-app `composer.json` adds the QA chain: `cambis/silverstan`, `phpstan/phpstan-deprecation-rules`, `tomasvotruba/type-coverage`, `wernerkrauss/silverstripe-rector`.
+
+Per the SilverStripe convention, the long-lived release branch is named after the major SilverStripe version it targets — this work merges into the `6` branch (not `main`). The previous SS5 line stays on its own line. Because this branch will not be released alongside an SS5 backport, `phpstan-deprecation-rules` is enabled at level max so any deprecated SS6 API surfaces immediately rather than via runtime warnings.
 
 ## Common commands
 
@@ -16,15 +18,14 @@ The repo *is* the package — there is no surrounding application. The dev envir
 | `make up` | Start FrankenPHP + MySQL stack (auto-generates `.docker/.env`, builds if needed) |
 | `make down` / `make destroy` | Stop services / stop and wipe volumes |
 | `make sh` | Open a shell inside the `app` container |
-| `make test` | Run PHPUnit (`.docker/app/phpunit.xml.dist`) |
-| `make analyse` | Run PHPStan at level 9 |
-| `make test-cs` | `php-cs-fixer fix --diff --dry-run` |
-| `make fix-cs` | Apply php-cs-fixer fixes |
+| `make test` / `make coverage` | Run PHPUnit (`.docker/app/phpunit.xml.dist`) — `coverage` adds text + HTML + clover output |
+| `make analyse` | Run PHPStan at level `max` (incl. deprecation rules + 100 % type coverage) |
+| `make rector` / `make rector-dry` | Apply / preview Rector refactors (SS5→SS6 set + PHP 8.3 set + standard presets) |
 | `make flush` / `make dev-build` | `sake flush` / `sake dev/build flush=1` |
 
 `make` targets pass through to `docker compose -f .docker/compose.yml exec app …`. `ensure-up` is a dependency on tool targets that brings the stack up if it's not already running.
 
-PHP-CS-Fixer rules (see `.php-cs-fixer.php`): `@PHP81Migration`, `@PSR12`, short array syntax, strict comparison, strict param, `array_push` rule, no unused imports. `declare_strict_types` is intentionally **off** (tracked TODO in the config — re-enabling is paired with the PHPStan rollout).
+There is **no** `php-cs-fixer` step. Code style is enforced by Rector via `Netwerkstatt\SilverstripeRector\Set\SilverstripeSetList::CODE_STYLE` — run `make rector` to apply.
 
 ## Architecture
 
@@ -39,24 +40,28 @@ Three concerns matter here, and they're all small files — read `src/Model/Menu
 `Menu` implements `TemplateGlobalProvider`, exposing two template helpers:
 
 - `$MenustructureMenu('slug')` → returns the `Menu` (renders via its default template — `templates/WeDevelop/Menustructure/Model/Menu.ss`).
-- `$ViewableMenustructureMenu('slug', 'Path/To/Template')` → renders the matching menu with a custom template.
+- `$ViewableMenustructureMenu('slug', 'Path/To/Template')` → renders the matching menu with a custom template; returns `?DBHTMLText`.
+
+`Menu::forTemplate()` returns `string` to match SS6's `ModelData::forTemplate(): string` signature — `renderWith()` still produces a `DBHTMLText`, which we cast.
 
 Custom templates iterate `$Items` and check `$LinkType != "no-link"` before emitting `<a href="$Link">` (see the bundled `Menu.ss`).
 
 ### LinkType state machine on `MenuItem`
 
-`LinkType` is a string enum with four values defined as private constants: `page`, `url`, `file`, `no-link`. The CMS field exposure of every other field is gated by display-logic on `LinkType` (using `UncleCheese\DisplayLogic\Forms\Wrapper`):
+`LinkType` is a string enum with four values defined as `private const string` (PHP 8.3 typed-constant syntax): `page`, `url`, `file`, `no-link`. The CMS field exposure of every other field is gated by display-logic on `LinkType` (using `UncleCheese\DisplayLogic\Forms\Wrapper`):
 
 - `page` → shows `LinkedPage` (`SiteTree` tree dropdown), optionally `QueryString` and `AnchorText`.
 - `url` → shows `Url`.
 - `file` → shows `File` (assets `has_one`, also in `$owns` so it's published with the item).
 - `no-link` → renders as `<span>` in the default template; `getLink()` returns `''`.
 
+`getCMSFields()` uses `dataFieldByName()` defensively — in SS6 it returns `?FormField`, so the code null-guards each lookup. Don't reintroduce chained `dataFieldByName()->displayIf()->…` without a null check; PHPStan max + deprecation rules will flag it.
+
 `getLink()` is a `match` on `LinkType` that **also** appends `?QueryString` and `#AnchorText` for `page` links — but only when those features are enabled via config (`enable_query_string`, `enable_page_anchor`, both default `false`). The `updateLinkTypes` and `updateLink` extension hooks let downstream modules add new link types or rewrite generated links — preserve those when refactoring.
 
 ### Cascading-write side effect (the non-obvious one)
 
-`MenuItem::onAfterWrite()` and `onBeforeDelete()` *propagate `LastEdited` upward* to the parent `MenuItem` and to the owning `Menu`. This is intentional: it lets downstream caching (HTTP cache, partial caches keyed on `Menu.LastEdited`) invalidate the whole menu when any descendant item changes. If you refactor write paths, do not break this propagation — there is no test catching it.
+`MenuItem::onAfterWrite()` and `onBeforeDelete()` *propagate `LastEdited` upward* to the parent `MenuItem` and to the owning `Menu`. This is intentional: it lets downstream caching (HTTP cache, partial caches keyed on `Menu.LastEdited`) invalidate the whole menu when any descendant item changes. `tests/Model/MenuItemTest.php` covers this with `stampLastEditedBackward()` — keep those tests passing if you refactor write paths.
 
 `Menu::onBeforeDelete()` deletes all `Items` directly (rather than relying on `cascade_deletes`); the equivalent `cascade_deletes` config is not set.
 
@@ -71,17 +76,26 @@ WeDevelop\Menustructure\Model\Menu:
     - 'footer'
 ```
 
-`Menu::IsProtected()` flips `canDelete()` to `false` and forces the `Slug` field read-only in CMS edit. Note: `docs/configuration.md` still references the legacy `TheWebmen\Menustructure\Model\Menu` namespace and `templates/TheWebmen/...` path — the actual namespace is `WeDevelop\Menustructure` and the template lives at `templates/WeDevelop/Menustructure/Model/Menu.ss`. Treat the docs as out-of-date until updated.
+`Menu::IsProtected()` flips `canDelete()` to `false` and forces the `Slug` field read-only in CMS edit.
+
+### Permission-method signatures
+
+`canCreate / canView / canEdit / canDelete` are typed as `mixed $member = null` (and `mixed $context = []` on `canCreate`). The parent `DataObject` declares them untyped, and PHP's LSP forbids narrowing to `?Member`. `mixed` satisfies `tomasvotruba/type-coverage` at 100 % without breaking the parent contract — same approach used in `wedevelopnl/silverstripe-grid`. Don't "tighten" these to `?Member` unless the parent stub changes upstream.
 
 ## Things to know before editing
 
-- **This branch (`feature/ss6-compatibility-and-test-integration`) introduces the dev infra only.** SS6 compatibility, PHPUnit test suite, and additional QA tooling (PHPStan rollout, type coverage, etc.) are followup tasks. `composer.json` is unchanged from `main` — still SS5/PHP 8.1.
-- **Tests directory exists but is empty.** `make test` runs PHPUnit against `tests/` (mounted into the container). Adding the first test class is the followup task — until then PHPUnit will report "no tests executed".
-- **Branch alias** in `composer.json` maps `dev-main` → `4.x-dev`. The next major (matching SS6 compatibility) will likely be `5.x` — coordinate the alias bump with the release.
-- **`composer.lock` is gitignored**, as is `vendor/`. The `entrypoint.sh` runs `composer install` on container start and re-runs `vendor-expose`; local code changes to `composer.json` need `make build` (or `make destroy && make up`) to rebuild the image cleanly.
-- **Distribution**: `.gitattributes` marks `/.docker`, `/.github`, `/Makefile`, `/.php-cs-fixer.php`, `/docs`, `/tests`, etc. as `export-ignore` so they don't ship in Packagist tarballs. When adding new dev-only files at the root, add a matching `export-ignore` entry.
+- **PHP 8.3+, SilverStripe `^6`.** `silverstripe/cms`, `silverstripe/framework`, `silverstripe/admin`, `unclecheese/display-logic ^4`, `symbiote/silverstripe-gridfieldextensions ^5`. The previous `silverstripe/display-logic ^3` constraint was actually wrong (the code imports `UncleCheese\…`); fixed during the SS6 bump.
+- **Branching**: the SS6 line lives on the `6` branch, matching SilverStripe's own convention. There is no `branch-alias` in `composer.json` — Composer infers the dev version from the branch name (so `dev-6` resolves naturally).
+- **`composer.lock` is gitignored**, as is `vendor/`. The `entrypoint.sh` runs `composer install` on container start; local code changes to `composer.json` need `make build` (or `make destroy && make up`) to rebuild the image cleanly.
+- **Distribution**: `.gitattributes` marks `/.docker`, `/.github`, `/Makefile`, `/docs`, `/tests`, etc. as `export-ignore` so they don't ship in Packagist tarballs. When adding new dev-only files at the root, add a matching `export-ignore` entry.
 - **CHANGELOG**: releases are tagged on GitHub; do not maintain `CHANGELOG.md` manually (it points at the GitHub releases page).
+
+## Rector
+
+Config at `.docker/app/rector.php`. Sets enabled: `deadCode`, `codeQuality`, `typeDeclarations`, `instanceOf`, `earlyReturn`, `rectorPreset`, PHP 8.3, `SilverstripeSetList::CODE_STYLE`, `SilverstripeLevelSetList::UP_TO_SS_6_0`. Three rules are explicitly skipped (subjective style — matching the silverstripe-grid setup): `ChangeOrIfContinueToMultiContinueRector`, `FlipTypeControlToUseExclusiveTypeRector`, `PostIncDecToPreIncDecRector`.
+
+The `wernerkrauss/silverstripe-rector` SS6 ruleset only renames a handful of classes (`ViewableData` → `ModelData` and friends). It does **not** move `DBHTMLText`, `HasManyList`, or other ORM types — those still live under `SilverStripe\ORM\…` in SS6. Don't manually rewrite imports based on a guess; verify against `vendor/silverstripe/framework/src/` first.
 
 ## CI
 
-`.github/workflows/ci.yml` runs three jobs on `main` branch pushes/PRs: `code-style` (php-cs-fixer dry-run on the host), `static-analysis` (PHPStan via `make analyse`), and a `phpunit` matrix across PHP 8.2/8.3. PHP 8.1 isn't tested even though `composer.json` declares `php: ^8.1` — FrankenPHP doesn't ship a PHP 8.1 image. `.github/dependabot.yml` watches `composer`, the `.docker/` Dockerfile, and GitHub Actions versions.
+`.github/workflows/ci.yml` runs two jobs on `6` branch pushes/PRs: `static-analysis` (`make analyse` + `make rector-dry`) and a `phpunit` matrix across PHP 8.3/8.4/8.5. `.github/dependabot.yml` watches `composer`, the `.docker/` Dockerfile, and GitHub Actions versions.

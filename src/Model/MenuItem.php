@@ -1,7 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace WeDevelop\Menustructure\Model;
 
+use DateTime;
+use Override;
 use SilverStripe\Assets\File;
 use SilverStripe\CMS\Model\SiteTree;
 use SilverStripe\Control\Controller;
@@ -13,7 +17,6 @@ use SilverStripe\Forms\TextField;
 use SilverStripe\Forms\TreeDropdownField;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\HasManyList;
-use SilverStripe\Security\Member;
 use SilverStripe\Security\Permission;
 use Symbiote\GridFieldExtensions\GridFieldOrderableRows;
 use UncleCheese\DisplayLogic\Forms\Wrapper;
@@ -33,13 +36,13 @@ use WeDevelop\Menustructure\Admin\MenusAdmin;
  */
 class MenuItem extends DataObject
 {
-    private const LINK_TYPE_PAGE = 'page';
+    private const string LINK_TYPE_PAGE = 'page';
 
-    private const LINK_TYPE_URL = 'url';
+    private const string LINK_TYPE_URL = 'url';
 
-    private const LINK_TYPE_FILE = 'file';
+    private const string LINK_TYPE_FILE = 'file';
 
-    private const LINK_TYPE_NO_LINK = 'no-link';
+    private const string LINK_TYPE_NO_LINK = 'no-link';
 
     /** @config */
     private static string $table_name = 'Menustructure_MenuItem';
@@ -95,9 +98,10 @@ class MenuItem extends DataObject
     /** @config */
     private static bool $enable_query_string = false;
 
+    #[Override]
     public function getCMSFields(): FieldList
     {
-        $this->beforeUpdateCMSFields(function ($fields) {
+        $this->beforeUpdateCMSFields(function (FieldList $fields): void {
             $fields->removeByName([
                 'Sort',
                 'ParentItemID',
@@ -108,28 +112,43 @@ class MenuItem extends DataObject
             $fields->replaceField('LinkedPageID', $linkedPageWrapper = Wrapper::create(TreeDropdownField::create('LinkedPageID', $this->fieldLabel('LinkedPage'), SiteTree::class)));
 
             $linkedPageWrapper->displayIf('LinkType')->isEqualTo(self::LINK_TYPE_PAGE);
-            $fields->dataFieldByName('File')->displayIf('LinkType')->isEqualTo(self::LINK_TYPE_FILE);
-            $fields->dataFieldByName('Url')->displayIf('LinkType')->isEqualTo(self::LINK_TYPE_URL);
-            $fields->dataFieldByName('OpenInNewWindow')->displayIf('LinkType')->isEqualTo(self::LINK_TYPE_PAGE)->orIf('LinkType')->isEqualTo(self::LINK_TYPE_URL)->orIf('LinkType')->isEqualTo(self::LINK_TYPE_FILE);
+
+            $fileField = $fields->dataFieldByName('File');
+            $fileField?->displayIf('LinkType')->isEqualTo(self::LINK_TYPE_FILE);
+
+            $urlField = $fields->dataFieldByName('Url');
+            $urlField?->displayIf('LinkType')->isEqualTo(self::LINK_TYPE_URL);
+
+            $openInNewWindow = $fields->dataFieldByName('OpenInNewWindow');
+            $openInNewWindow?->displayIf('LinkType')->isEqualTo(self::LINK_TYPE_PAGE)
+                ->orIf('LinkType')->isEqualTo(self::LINK_TYPE_URL)
+                ->orIf('LinkType')->isEqualTo(self::LINK_TYPE_FILE);
 
             if (self::config()->get('enable_query_string')) {
-                /** @var TextField $queryStringField */
+                /** @var TextField|null $queryStringField */
                 $queryStringField = $fields->dataFieldByName('QueryString');
-                $queryStringField->displayIf('LinkType')->isEqualTo(self::LINK_TYPE_PAGE);
-                $queryStringField->setDescription('Example: <code>foo=bar&john=doe</code>');
-                $fields->addFieldToTab('Root.Main', $queryStringField);
+                if ($queryStringField !== null) {
+                    $queryStringField->displayIf('LinkType')->isEqualTo(self::LINK_TYPE_PAGE);
+                    $queryStringField->setDescription('Example: <code>foo=bar&john=doe</code>');
+                    $fields->addFieldToTab('Root.Main', $queryStringField);
+                }
             } else {
                 $fields->removeByName('QueryString');
             }
 
             if (self::config()->get('enable_page_anchor')) {
-                $fields->dataFieldByName('AnchorText')->displayIf('LinkType')->isEqualTo(self::LINK_TYPE_PAGE);
-                $fields->addFieldToTab('Root.Main', $fields->dataFieldByName('AnchorText'));
+                $anchorField = $fields->dataFieldByName('AnchorText');
+                if ($anchorField !== null) {
+                    $anchorField->displayIf('LinkType')->isEqualTo(self::LINK_TYPE_PAGE);
+                    $fields->addFieldToTab('Root.Main', $anchorField);
+                }
             } else {
                 $fields->removeByName('AnchorText');
             }
 
-            $fields->addFieldToTab('Root.Main', $fields->dataFieldByName('OpenInNewWindow'));
+            if ($openInNewWindow !== null) {
+                $fields->addFieldToTab('Root.Main', $openInNewWindow);
+            }
 
             $fields->removeByName('Items');
             if ($this->exists()) {
@@ -179,18 +198,20 @@ class MenuItem extends DataObject
 
     public function LinkingMode(): string
     {
-        if ($this->LinkType === self::LINK_TYPE_PAGE) {
-            return Controller::curr()->ID === $this->LinkedPageID ? 'current' : 'link';
+        if ($this->LinkType !== self::LINK_TYPE_PAGE) {
+            return 'link';
         }
 
-        return 'link';
+        $controller = Controller::curr();
+
+        return $controller !== null && $controller->ID === $this->LinkedPageID ? 'current' : 'link';
     }
 
     /**
-     * @param Member|null $member
-     * @param array<string, mixed> $context
+     * @param mixed[] $context
      */
-    public function canCreate($member = null, $context = []): bool
+    #[Override]
+    public function canCreate(mixed $member = null, mixed $context = []): bool
     {
         if (Permission::checkMember($member ?? 0, 'CMS_ACCESS_' . MenusAdmin::class)) {
             return true;
@@ -199,10 +220,8 @@ class MenuItem extends DataObject
         return parent::canCreate($member, $context);
     }
 
-    /**
-     * @param Member|null $member
-     */
-    public function canView($member = null): bool
+    #[Override]
+    public function canView(mixed $member = null): bool
     {
         if (Permission::checkMember($member ?? 0, 'CMS_ACCESS_' . MenusAdmin::class)) {
             return true;
@@ -211,10 +230,8 @@ class MenuItem extends DataObject
         return parent::canView($member);
     }
 
-    /**
-     * @param Member|null $member
-     */
-    public function canEdit($member = null): bool
+    #[Override]
+    public function canEdit(mixed $member = null): bool
     {
         if (Permission::checkMember($member ?? 0, 'CMS_ACCESS_' . MenusAdmin::class)) {
             return true;
@@ -223,10 +240,8 @@ class MenuItem extends DataObject
         return parent::canEdit($member);
     }
 
-    /**
-     * @param Member|null $member
-     */
-    public function canDelete($member = null): bool
+    #[Override]
+    public function canDelete(mixed $member = null): bool
     {
         if (Permission::checkMember($member ?? 0, 'CMS_ACCESS_' . MenusAdmin::class)) {
             return true;
@@ -235,6 +250,7 @@ class MenuItem extends DataObject
         return parent::canDelete($member);
     }
 
+    #[Override]
     public function onBeforeDelete(): void
     {
         parent::onBeforeDelete();
@@ -242,7 +258,7 @@ class MenuItem extends DataObject
         $menu = $this->Menu();
         $parentItem = $this->ParentItem();
 
-        $now = new \DateTime();
+        $now = new DateTime();
 
         if ($menu->exists()) {
             $menu->LastEdited = $now->format('Y-m-d H:i:s');
@@ -255,6 +271,7 @@ class MenuItem extends DataObject
         }
     }
 
+    #[Override]
     public function onAfterWrite(): void
     {
         parent::onAfterWrite();
