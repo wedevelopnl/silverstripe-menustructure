@@ -147,23 +147,25 @@ class MenuItem extends DataObject
         return parent::getCMSFields();
     }
 
-    public function getLink(): string
+    public function getLink(): ?string
     {
         $type = LinkType::tryFrom($this->LinkType ?? '');
 
         $link = match ($type) {
-            LinkType::Url => $this->Url,
-            LinkType::Page => $this->LinkedPage()->exists() ? (string)$this->LinkedPage()->Link() : '',
-            LinkType::File => $this->File()->exists() ? (string)$this->File()->Link() : '',
-            LinkType::NoLink, LinkType::Breakpoint, null => '',
+            LinkType::Url => $this->Url ?: null,
+            LinkType::Page => $this->LinkedPage()->exists() ? (string)$this->LinkedPage()->Link() : null,
+            LinkType::File => $this->File()->exists() ? (string)$this->File()->Link() : null,
+            LinkType::NoLink, LinkType::Breakpoint, null => null,
         };
 
-        if ($type === LinkType::Page && self::config()->get('enable_query_string') && $this->QueryString) {
-            $link = sprintf('%s?%s', $link, $this->QueryString);
-        }
+        if ($link !== null && $type === LinkType::Page) {
+            if (self::config()->get('enable_query_string') && $this->QueryString) {
+                $link .= '?' . $this->QueryString;
+            }
 
-        if ($type === LinkType::Page && self::config()->get('enable_page_anchor') && $this->AnchorText) {
-            $link = sprintf('%s#%s', $link, $this->AnchorText);
+            if (self::config()->get('enable_page_anchor') && $this->AnchorText) {
+                $link .= '#' . $this->AnchorText;
+            }
         }
 
         $this->extend('updateLink', $link);

@@ -53,8 +53,8 @@ Custom templates iterate `$Items` and check `$LinkType != "no-link"` before emit
 - `page` → shows `LinkedPage` (`SiteTree` tree dropdown), optionally `QueryString` and `AnchorText`.
 - `url` → shows `Url`.
 - `file` → shows `File` (assets `has_one`, also in `$owns` so it's published with the item).
-- `no-link` → renders as `<span>` in the default template; `getLink()` returns `''`.
-- `breakpoint` → structural marker (dividers, mega-menu column breaks); `getLink()` returns `''`. Templates detect it via `$LinkType = "breakpoint"`.
+- `no-link` → renders as `<span>` in the default template; `getLink()` returns `null`.
+- `breakpoint` → structural marker (dividers, mega-menu column breaks); `getLink()` returns `null`. Templates detect it via `$LinkType = "breakpoint"`.
 
 `getCMSFields()` uses `dataFieldByName()` defensively — in SS6 it returns `?FormField`, so the code null-guards each lookup. Don't reintroduce chained `dataFieldByName()->displayIf()->…` without a null check; PHPStan max + deprecation rules will flag it.
 

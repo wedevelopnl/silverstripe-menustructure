@@ -37,28 +37,31 @@ class MenuItemTest extends SapphireTest
         $this->assertSame($page->Link(), $item->getLink());
     }
 
-    public function testGetLinkReturnsEmptyStringForNoLinkType(): void
+    public function testGetLinkReturnsNullForNoLinkType(): void
     {
         $item = $this->objFromFixture(MenuItem::class, 'emptyLink');
 
-        $this->assertSame('', $item->getLink());
+        $this->assertNull($item->getLink());
     }
 
-    public function testGetLinkReturnsEmptyStringForBreakpointType(): void
+    public function testGetLinkReturnsNullForBreakpointType(): void
     {
         $item = $this->objFromFixture(MenuItem::class, 'breakpointLink');
 
-        $this->assertSame('', $item->getLink());
+        $this->assertNull($item->getLink());
     }
 
     public function testGetLinkReturnsFileLinkForFileType(): void
     {
         $item = $this->objFromFixture(MenuItem::class, 'fileLink');
+        $file = $item->File();
 
-        // getLink() coerces null → '' via the trailing `?? ''`, so normalise the
-        // expected value the same way to keep the test independent of whether
-        // the asset has a published Link() in the test environment.
-        $this->assertSame((string)$item->File()->Link(), $item->getLink());
+        // Whether File::exists() is true depends on test-env asset state — fixture
+        // rows alone don't physically write bytes. Mirror both branches of the
+        // match so the test pins down the contract regardless of that state:
+        // exists() → string Link(); missing → null.
+        $expected = $file->exists() ? (string)$file->Link() : null;
+        $this->assertSame($expected, $item->getLink());
     }
 
     public function testGetLinkAppendsQueryStringWhenEnabledForPageType(): void

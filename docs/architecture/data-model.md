@@ -85,7 +85,7 @@ The module exposes one `extend()` call on `MenuItem`:
 
 | Hook | Signature | Purpose |
 |------|-----------|---------|
-| `updateLink` | `function updateLink(string &$link)` | Rewrite the generated link before it's returned by `getLink()` |
+| `updateLink` | `function updateLink(?string &$link)` | Rewrite the generated link before it's returned by `getLink()`. `$link` is `null` for items that don't produce a link (e.g. `no-link`, `breakpoint`, or a `page`/`file` type with no relation set) |
 
 Register an extension on `MenuItem` to inject behaviour:
 
@@ -102,9 +102,9 @@ use SilverStripe\Core\Extension;
 
 class TrackingMenuItemExtension extends Extension
 {
-    public function updateLink(string &$link): void
+    public function updateLink(?string &$link): void
     {
-        if ($link !== '') {
+        if ($link !== null) {
             $link .= (str_contains($link, '?') ? '&' : '?') . 'utm_source=menu';
         }
     }
