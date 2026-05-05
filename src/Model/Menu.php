@@ -38,6 +38,11 @@ class Menu extends DataObject implements TemplateGlobalProvider
     ];
 
     /** @config */
+    private static array $cascade_deletes = [
+        'Items',
+    ];
+
+    /** @config */
     private static array $summary_fields = [
         'Title',
         'Slug',
@@ -72,16 +77,6 @@ class Menu extends DataObject implements TemplateGlobalProvider
 
         if (!$this->Slug) {
             $this->Slug = URLSegmentFilter::create()->filter($this->Title);
-        }
-    }
-
-    #[Override]
-    public function onBeforeDelete(): void
-    {
-        parent::onBeforeDelete();
-
-        foreach ($this->Items() as $item) {
-            $item->delete();
         }
     }
 

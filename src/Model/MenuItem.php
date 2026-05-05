@@ -63,8 +63,9 @@ class MenuItem extends DataObject
         'Items' => MenuItem::class,
     ];
 
-    private static array $owns = [
-        'File',
+    /** @config */
+    private static array $cascade_deletes = [
+        'Items',
     ];
 
     /** @config */

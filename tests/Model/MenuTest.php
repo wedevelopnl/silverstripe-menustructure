@@ -153,7 +153,7 @@ class MenuTest extends SapphireTest
         $this->assertStringContainsString('About', $rendered);
     }
 
-    public function testOnBeforeDeleteCascadesToChildItems(): void
+    public function testDeleteCascadesToChildItems(): void
     {
         $menu = $this->objFromFixture(Menu::class, 'primary');
         $itemIDs = $menu->Items()->column('ID');

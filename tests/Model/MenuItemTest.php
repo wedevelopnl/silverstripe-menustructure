@@ -225,6 +225,26 @@ class MenuItemTest extends SapphireTest
         $this->assertNotSame(self::PAST_DATETIME, $afterParent->LastEdited);
     }
 
+    public function testDeleteCascadesToDescendantItems(): void
+    {
+        // Fixture chain: topLevel → childLevel → grandchildLevel.
+        // Deleting the middle node must take its descendants with it (down) but
+        // leave the parent and unrelated siblings intact (no upward / sideways
+        // cascade). Removing $cascade_deletes from MenuItem would orphan
+        // grandchildLevel — that's the regression this test pins down.
+        $parent = $this->objFromFixture(MenuItem::class, 'topLevel');
+        $middle = $this->objFromFixture(MenuItem::class, 'childLevel');
+        $leaf = $this->objFromFixture(MenuItem::class, 'grandchildLevel');
+        $sibling = $this->objFromFixture(MenuItem::class, 'pageLink');
+
+        $middle->delete();
+
+        $this->assertNull(MenuItem::get()->byID($middle->ID), 'Deleted item itself is gone');
+        $this->assertNull(MenuItem::get()->byID($leaf->ID), 'Descendant is cascade-deleted');
+        $this->assertNotNull(MenuItem::get()->byID($parent->ID), 'Parent is not touched by downward cascade');
+        $this->assertNotNull(MenuItem::get()->byID($sibling->ID), 'Unrelated siblings are not touched');
+    }
+
     /**
      * @dataProvider permissionMatrix
      */
