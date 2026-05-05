@@ -18,7 +18,7 @@ use Symbiote\GridFieldExtensions\GridFieldOrderableRows;
 /**
  * @property string $Title
  * @property string $Slug
- * @method HasManyList Items()
+ * @method HasManyList<MenuItem> Items()
  */
 class Menu extends DataObject implements TemplateGlobalProvider
 {
@@ -54,7 +54,7 @@ class Menu extends DataObject implements TemplateGlobalProvider
             ]);
 
             if ($this->exists()) {
-                $gridConfig = new GridFieldConfig_RelationEditor();
+                $gridConfig = GridFieldConfig_RelationEditor::create();
                 $gridConfig->addComponent(GridFieldOrderableRows::create());
                 $fields->addFieldToTab('Root.Main', GridField::create('Items', 'Items', $this->Items(), $gridConfig));
             }
@@ -83,9 +83,9 @@ class Menu extends DataObject implements TemplateGlobalProvider
 
     public function IsProtected(): bool
     {
-        $protectedMenus = $this->Config()->get('protected_menus');
+        $protectedMenus = static::config()->get('protected_menus');
 
-        if ($protectedMenus && $this->Slug && in_array($this->Slug, $protectedMenus, true)) {
+        if (is_array($protectedMenus) && $this->Slug && in_array($this->Slug, $protectedMenus, true)) {
             return true;
         }
 
@@ -93,23 +93,24 @@ class Menu extends DataObject implements TemplateGlobalProvider
     }
 
     /**
-     * @param null|int|Member $member
+     * @param Member|null $member
+     * @param array<string, mixed> $context
      */
     public function canCreate($member = null, $context = []): bool
     {
-        if (Permission::checkMember($member, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
+        if (Permission::checkMember($member ?? 0, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
             return true;
         }
 
-        return parent::canCreate($member);
+        return parent::canCreate($member, $context);
     }
 
     /**
-     * @param null|int|Member $member
+     * @param Member|null $member
      */
     public function canView($member = null): bool
     {
-        if (Permission::checkMember($member, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
+        if (Permission::checkMember($member ?? 0, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
             return true;
         }
 
@@ -117,24 +118,27 @@ class Menu extends DataObject implements TemplateGlobalProvider
     }
 
     /**
-     * @param null|int|Member $member
+     * @param Member|null $member
      */
     public function canEdit($member = null): bool
     {
-        if (Permission::checkMember($member, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
+        if (Permission::checkMember($member ?? 0, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
             return true;
         }
 
         return parent::canEdit($member);
     }
 
+    /**
+     * @param Member|null $member
+     */
     public function canDelete($member = null): bool
     {
         if ($this->IsProtected()) {
             return false;
         }
 
-        if (Permission::checkMember($member, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
+        if (Permission::checkMember($member ?? 0, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
             return true;
         }
 
@@ -164,6 +168,9 @@ class Menu extends DataObject implements TemplateGlobalProvider
         ])->first();
     }
 
+    /**
+     * @return array<int, string>
+     */
     public static function get_template_global_variables(): array
     {
         return [
