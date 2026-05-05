@@ -1,6 +1,10 @@
+vendor
+composer.lock
+.php-cs-fixer.cache
+.phpunit.cache
+.idea
+.vscode
+.docker/.env
+coverage
 /**/*.js.map
 /**/*.css.map
-/vendor/
-/composer.lock
-/.idea/
-.php-cs-fixer.cache

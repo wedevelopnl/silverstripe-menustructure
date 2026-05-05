@@ -6,22 +6,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A SilverStripe CMS module (`wedevelopnl/silverstripe-menustructure`) that lets editors define multiple named, nested menus in the CMS and render them in templates by slug. PHP 8.1+, SilverStripe CMS `^5`, PSR-4 namespace `WeDevelop\Menustructure\` rooted at `src/`.
 
-There is no application around this module — the repo *is* the package. There is no `silverstripe/recipe-cms` or kitchen-sink installation here; the Docker image only installs Composer dependencies for tooling (php-cs-fixer). You cannot boot a running CMS from this repo alone.
+The repo *is* the package — there is no surrounding application. The dev environment under `.docker/` builds a throwaway SilverStripe app (recipe-cms `^5`) that mounts the module at `/module` and pulls it in via a path repository, modelled on `silverstripe-grid/.docker/` and `silverstripe-media-field/.docker/`. SS6 compat is the next branch milestone — the dev infra is intentionally pinned to SS5 until that work begins.
 
 ## Common commands
 
-All `make` targets shell into the `php` Docker service when run from the host (the `${docker}` prefix in the Makefile detects this); inside the container they run directly.
-
 | Command | What it does |
 | --- | --- |
-| `make build` | Build the Docker image and start detached |
-| `make up` / `make down` | Start / stop the dev container |
-| `make sh` | Open a shell inside the `php` container |
-| `make test` | `php-cs-fixer fix --diff --dry-run` (style check only — there is no PHPUnit suite) |
+| `make build` | Build the dev container without starting |
+| `make up` | Start FrankenPHP + MySQL stack (auto-generates `.docker/.env`, builds if needed) |
+| `make down` / `make destroy` | Stop services / stop and wipe volumes |
+| `make sh` | Open a shell inside the `app` container |
+| `make test` | Run PHPUnit (`.docker/app/phpunit.xml.dist`) |
+| `make analyse` | Run PHPStan at level 9 |
+| `make test-cs` | `php-cs-fixer fix --diff --dry-run` |
 | `make fix-cs` | Apply php-cs-fixer fixes |
-| `make help` | List all targets |
+| `make flush` / `make dev-build` | `sake flush` / `sake dev/build flush=1` |
 
-PHP-CS-Fixer rules (see `.php-cs-fixer.php`): `@PHP81Migration`, `@PSR12`, short array syntax, strict comparison, strict param, `array_push` rule, no unused imports. `declare_strict_types` is intentionally **off** (tracked TODO in the config — re-enabling is paired with adding PHPStan).
+`make` targets pass through to `docker compose -f .docker/compose.yml exec app …`. `ensure-up` is a dependency on tool targets that brings the stack up if it's not already running.
+
+PHP-CS-Fixer rules (see `.php-cs-fixer.php`): `@PHP81Migration`, `@PSR12`, short array syntax, strict comparison, strict param, `array_push` rule, no unused imports. `declare_strict_types` is intentionally **off** (tracked TODO in the config — re-enabling is paired with the PHPStan rollout).
 
 ## Architecture
 
@@ -72,7 +75,13 @@ WeDevelop\Menustructure\Model\Menu:
 
 ## Things to know before editing
 
-- **No automated tests exist.** The current branch (`feature/ss6-compatibility-and-test-integration`) is set up to introduce a test integration; do not assume `make test` runs PHPUnit. Verify behaviour manually in a host SilverStripe project or add the test harness as part of the change.
+- **This branch (`feature/ss6-compatibility-and-test-integration`) introduces the dev infra only.** SS6 compatibility, PHPUnit test suite, and additional QA tooling (PHPStan rollout, type coverage, etc.) are followup tasks. `composer.json` is unchanged from `main` — still SS5/PHP 8.1.
+- **Tests directory exists but is empty.** `make test` runs PHPUnit against `tests/` (mounted into the container). Adding the first test class is the followup task — until then PHPUnit will report "no tests executed".
 - **Branch alias** in `composer.json` maps `dev-main` → `4.x-dev`. The next major (matching SS6 compatibility) will likely be `5.x` — coordinate the alias bump with the release.
-- **`composer.lock` is gitignored**, as is `vendor/`. The Dockerfile bakes `composer install` into the image build, but the entrypoint also runs it on container start — local code changes to `composer.json` require `make build` (rebuild) rather than just `make up`.
+- **`composer.lock` is gitignored**, as is `vendor/`. The `entrypoint.sh` runs `composer install` on container start and re-runs `vendor-expose`; local code changes to `composer.json` need `make build` (or `make destroy && make up`) to rebuild the image cleanly.
+- **Distribution**: `.gitattributes` marks `/.docker`, `/.github`, `/Makefile`, `/.php-cs-fixer.php`, `/docs`, `/tests`, etc. as `export-ignore` so they don't ship in Packagist tarballs. When adding new dev-only files at the root, add a matching `export-ignore` entry.
 - **CHANGELOG**: releases are tagged on GitHub; do not maintain `CHANGELOG.md` manually (it points at the GitHub releases page).
+
+## CI
+
+`.github/workflows/ci.yml` runs three jobs on `main` branch pushes/PRs: `code-style` (php-cs-fixer dry-run on the host), `static-analysis` (PHPStan via `make analyse`), and a `phpunit` matrix across PHP 8.2/8.3. PHP 8.1 isn't tested even though `composer.json` declares `php: ^8.1` — FrankenPHP doesn't ship a PHP 8.1 image. `.github/dependabot.yml` watches `composer`, the `.docker/` Dockerfile, and GitHub Actions versions.
