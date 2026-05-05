@@ -1,6 +1,6 @@
 COMPOSE := docker compose -f .docker/compose.yml
 
-.PHONY: up down destroy build ensure-up test analyse test-cs fix-cs flush dev-build sh
+.PHONY: up down destroy build ensure-up test coverage analyse test-cs fix-cs flush dev-build sh
 
 ## Generate .docker/.env with deterministic ports (auto-runs if missing)
 .docker/.env:
@@ -30,6 +30,13 @@ ensure-up: .docker/.env
 ## Run PHPUnit
 test: ensure-up
 	$(COMPOSE) exec app vendor/bin/phpunit
+
+## Run PHPUnit with code coverage (text summary on stdout, HTML at coverage/html, clover XML for CI)
+coverage: ensure-up
+	$(COMPOSE) exec app vendor/bin/phpunit \
+		--coverage-text \
+		--coverage-html /app/coverage/html \
+		--coverage-clover /app/coverage/clover.xml
 
 ## Run PHPStan static analysis
 analyse: ensure-up

@@ -1,0 +1,21 @@
+WeDevelop\Menustructure\Model\Menu:
+  primary:
+    Title: 'Primary navigation'
+    Slug: 'primary'
+  protected:
+    Title: 'Main menu'
+    Slug: 'main-menu'
+
+WeDevelop\Menustructure\Model\MenuItem:
+  primaryHome:
+    Title: 'Home'
+    LinkType: 'url'
+    Url: '/'
+    Sort: 1
+    Menu: =>WeDevelop\Menustructure\Model\Menu.primary
+  primaryAbout:
+    Title: 'About'
+    LinkType: 'url'
+    Url: '/about/'
+    Sort: 2
+    Menu: =>WeDevelop\Menustructure\Model\Menu.primary

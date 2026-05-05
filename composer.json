@@ -1,5 +1,6 @@
 {
     "name": "wedevelopnl/silverstripe-menustructure",
+    "type": "silverstripe-vendormodule",
     "description": "Silverstripe module to create nested menus",
     "keywords": [
         "silverstripe",

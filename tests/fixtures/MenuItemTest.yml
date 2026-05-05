@@ -1,0 +1,65 @@
+SilverStripe\CMS\Model\SiteTree:
+  homepage:
+    Title: 'Home'
+    URLSegment: 'home'
+  contact:
+    Title: 'Contact'
+    URLSegment: 'contact'
+
+SilverStripe\Assets\File:
+  brochure:
+    Title: 'Brochure'
+    Name: 'brochure.pdf'
+    FileFilename: 'brochure.pdf'
+    FileHash: '0000000000000000000000000000000000000000'
+
+WeDevelop\Menustructure\Model\Menu:
+  default:
+    Title: 'Test menu'
+    Slug: 'test-menu'
+
+WeDevelop\Menustructure\Model\MenuItem:
+  topLevel:
+    Title: 'Top level'
+    LinkType: 'url'
+    Url: 'https://example.com'
+    Sort: 1
+    Menu: =>WeDevelop\Menustructure\Model\Menu.default
+  childLevel:
+    Title: 'Child'
+    LinkType: 'url'
+    Url: 'https://example.com/child'
+    Sort: 1
+    Menu: =>WeDevelop\Menustructure\Model\Menu.default
+    ParentItem: =>WeDevelop\Menustructure\Model\MenuItem.topLevel
+  grandchildLevel:
+    Title: 'Grandchild'
+    LinkType: 'no-link'
+    Sort: 1
+    Menu: =>WeDevelop\Menustructure\Model\Menu.default
+    ParentItem: =>WeDevelop\Menustructure\Model\MenuItem.childLevel
+  pageLink:
+    Title: 'Home page'
+    LinkType: 'page'
+    QueryString: 'utm=home'
+    AnchorText: 'top'
+    Sort: 2
+    Menu: =>WeDevelop\Menustructure\Model\Menu.default
+    LinkedPage: =>SilverStripe\CMS\Model\SiteTree.homepage
+  contactLink:
+    Title: 'Contact page'
+    LinkType: 'page'
+    Sort: 3
+    Menu: =>WeDevelop\Menustructure\Model\Menu.default
+    LinkedPage: =>SilverStripe\CMS\Model\SiteTree.contact
+  fileLink:
+    Title: 'Download brochure'
+    LinkType: 'file'
+    Sort: 4
+    Menu: =>WeDevelop\Menustructure\Model\Menu.default
+    File: =>SilverStripe\Assets\File.brochure
+  emptyLink:
+    Title: 'Section heading'
+    LinkType: 'no-link'
+    Sort: 5
+    Menu: =>WeDevelop\Menustructure\Model\Menu.default
