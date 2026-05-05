@@ -42,7 +42,7 @@ enum LinkType: string
 
 Stored as a MySQL `Enum('page,url,file,no-link,breakpoint', 'no-link')` column on `MenuItem`. Adding a new case requires a `dev/build` to run the schema `ALTER TABLE`.
 
-The set of valid types is closed at the PHP level. Extending the `LinkType` enum is not a SilverStripe extension hook — downstream modules that need an additional type must contribute it through a code change to this module (or replace the column with a freer type via a fork). This is a deliberate trade-off against the previous `updateLinkTypes` hook, which made the runtime set of types unverifiable for static analysis. See the [CHANGELOG](../../CHANGELOG.md) for the migration path.
+The set of valid types is closed at the PHP level. Extending the `LinkType` enum is not a SilverStripe extension hook — downstream modules that need an additional type must contribute it through a code change to this module (or replace the column with a freer type via a fork). The trade-off is intentional: a closed enum keeps the runtime set of types verifiable for static analysis.
 
 ## Cascade behaviour
 
@@ -112,8 +112,6 @@ class TrackingMenuItemExtension extends Extension
 ```
 
 The hook fires after `QueryString` / `AnchorText` are appended, so the extension sees the fully-composed link.
-
-> The previous `updateLinkTypes` hook (and its companion `link_types` config array) was removed when `LinkType` became a backed enum. Custom link types are no longer pluggable at runtime — see [LinkType enum](#linktype-enum) above for the rationale.
 
 ## CMS surface
 
