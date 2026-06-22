@@ -21,6 +21,7 @@ use WeDevelop\Menustructure\Admin\MenusAdmin;
  * @property string $Title
  * @property string $Slug
  * @method HasManyList<MenuItem> Items()
+ * @see \WeDevelop\Menustructure\Tests\Model\MenuTest
  */
 class Menu extends DataObject implements TemplateGlobalProvider
 {
