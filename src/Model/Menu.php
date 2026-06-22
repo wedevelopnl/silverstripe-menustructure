@@ -24,26 +24,21 @@ use WeDevelop\Menustructure\Admin\MenusAdmin;
  */
 class Menu extends DataObject implements TemplateGlobalProvider
 {
-    /** @config */
     private static string $table_name = 'Menustructure_Menu';
 
-    /** @config */
     private static array $db = [
         'Title' => 'Varchar',
         'Slug' => 'Varchar',
     ];
 
-    /** @config */
     private static array $has_many = [
         'Items' => MenuItem::class,
     ];
 
-    /** @config */
     private static array $cascade_deletes = [
         'Items',
     ];
 
-    /** @config */
     private static array $summary_fields = [
         'Title',
         'Slug',
