@@ -34,7 +34,7 @@ services:
       SS_PHPUNIT_FLUSH: 1
 
   db:
-    image: mysql:8
+    image: mysql:8.4
     ports:
       - "${DB_PORT}:3306"
     volumes:

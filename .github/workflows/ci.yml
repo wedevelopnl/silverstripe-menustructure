@@ -19,6 +19,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - run: make .docker/.env
+      - uses: ./.github/actions/cache-mysql-image
+        name: Cache MySQL image
       - run: $COMPOSE up -d --build --wait app
         name: Start services
       - run: make analyse
@@ -39,6 +41,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - run: make .docker/.env
+      - uses: ./.github/actions/cache-mysql-image
+        name: Cache MySQL image
       - run: $COMPOSE up -d --build --wait
         name: Start services
       - run: mkdir -p reports

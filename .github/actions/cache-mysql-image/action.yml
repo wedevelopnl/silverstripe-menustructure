@@ -1,0 +1,39 @@
+name: Cache MySQL image
+description: >-
+  Restore the db service image from the Actions cache, falling back to a single
+  pull-and-save on a miss. Keeps a Docker Hub rate limit or registry outage from
+  failing CI on every run, since the image only has to be fetched once per
+  cache lifetime instead of on every job.
+
+inputs:
+  compose-file:
+    description: Compose file that declares the db service whose image to cache.
+    default: .docker/compose.yml
+
+runs:
+  using: composite
+  steps:
+    # Resolve the image straight from the compose file so this stays correct
+    # if the pinned version changes — compose.yml is the single source of truth.
+    - id: image
+      shell: bash
+      run: |
+        ref="$(docker compose -f '${{ inputs.compose-file }}' config --images db)"
+        echo "ref=$ref" >> "$GITHUB_OUTPUT"
+        echo "key=$(printf '%s' "$ref" | tr -c '[:alnum:].' '-')" >> "$GITHUB_OUTPUT"
+
+    - id: cache
+      uses: actions/cache@v4
+      with:
+        path: /tmp/db-image.tar
+        key: db-image-${{ steps.image.outputs.key }}
+
+    - if: steps.cache.outputs.cache-hit == 'true'
+      shell: bash
+      run: docker load --input /tmp/db-image.tar
+
+    - if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        docker pull '${{ steps.image.outputs.ref }}'
+        docker save '${{ steps.image.outputs.ref }}' --output /tmp/db-image.tar
