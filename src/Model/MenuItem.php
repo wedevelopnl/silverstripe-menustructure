@@ -36,10 +36,8 @@ use WeDevelop\Menustructure\Admin\MenusAdmin;
  */
 class MenuItem extends DataObject
 {
-    /** @config */
     private static string $table_name = 'Menustructure_MenuItem';
 
-    /** @config */
     private static array $db = [
         'Title' => 'Varchar',
         'LinkType' => "Enum('page,url,file,no-link,breakpoint', 'no-link')",
@@ -50,7 +48,6 @@ class MenuItem extends DataObject
         'QueryString' => 'Varchar',
     ];
 
-    /** @config */
     private static array $has_one = [
         'File' => File::class,
         'Menu' => Menu::class,
@@ -58,30 +55,24 @@ class MenuItem extends DataObject
         'LinkedPage' => SiteTree::class,
     ];
 
-    /** @config */
     private static array $has_many = [
         'Items' => MenuItem::class,
     ];
 
-    /** @config */
     private static array $cascade_deletes = [
         'Items',
     ];
 
-    /** @config */
     private static array $summary_fields = [
         'Title',
         'LinkType',
         'OpenInNewWindow',
     ];
 
-    /** @config */
     private static string $default_sort = 'Sort';
 
-    /** @config */
     private static bool $enable_page_anchor = false;
 
-    /** @config */
     private static bool $enable_query_string = false;
 
     #[Override]
