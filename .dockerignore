@@ -1,0 +1,18 @@
+# Build artefacts that should never enter the image
+vendor/
+node_modules/
+coverage/
+
+# VCS / docs / CI — never needed in the image
+.git/
+.github/
+docs/
+
+# Editor / OS clutter
+.vscode/
+.idea/
+.DS_Store
+
+# php-cs-fixer cache / phpunit cache
+.php-cs-fixer.cache
+.phpunit.cache/

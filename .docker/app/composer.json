@@ -1,0 +1,59 @@
+{
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "require": {
+        "silverstripe/recipe-cms": "^6.0",
+        "wedevelopnl/silverstripe-menustructure": "*"
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "/module",
+            "options": {
+                "symlink": true
+            }
+        }
+    ],
+    "autoload": {
+        "classmap": [
+            "src/"
+        ]
+    },
+    "require-dev": {
+        "cambis/silverstan": "^2.1",
+        "phpstan/extension-installer": "^1.4",
+        "phpstan/phpstan": "^2.1",
+        "phpstan/phpstan-deprecation-rules": "^2.0",
+        "phpunit/phpunit": "^11.3",
+        "tomasvotruba/type-coverage": "^2.0",
+        "wernerkrauss/silverstripe-rector": "^1.0"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "WeDevelop\\Menustructure\\Tests\\": "vendor/wedevelopnl/silverstripe-menustructure/tests/"
+        }
+    },
+    "extra": {
+        "project-files-installed": [
+            ".htaccess",
+            "app/.htaccess",
+            "app/_config/mimevalidator.yml",
+            "app/_config/mysite.yml",
+            "app/src/Page.php",
+            "app/src/PageController.php"
+        ],
+        "public-files-installed": [
+            ".htaccess",
+            "index.php",
+            "web.config"
+        ]
+    },
+    "config": {
+        "allow-plugins": {
+            "composer/installers": true,
+            "phpstan/extension-installer": true,
+            "silverstripe/recipe-plugin": true,
+            "silverstripe/vendor-plugin": true
+        }
+    }
+}

@@ -1,24 +1,26 @@
 <?php
 
+declare(strict_types=1);
+
 namespace WeDevelop\Menustructure\Model;
 
+use Override;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\GridField\GridField;
 use SilverStripe\Forms\GridField\GridFieldConfig_RelationEditor;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\FieldType\DBHTMLText;
 use SilverStripe\ORM\HasManyList;
-use SilverStripe\Security\Member;
 use SilverStripe\Security\Permission;
 use SilverStripe\View\Parsers\URLSegmentFilter;
 use SilverStripe\View\TemplateGlobalProvider;
-use SilverStripe\View\ViewableData;
 use Symbiote\GridFieldExtensions\GridFieldOrderableRows;
+use WeDevelop\Menustructure\Admin\MenusAdmin;
 
 /**
  * @property string $Title
  * @property string $Slug
- * @method HasManyList Items()
+ * @method HasManyList<MenuItem> Items()
  */
 class Menu extends DataObject implements TemplateGlobalProvider
 {
@@ -37,16 +39,22 @@ class Menu extends DataObject implements TemplateGlobalProvider
     ];
 
     /** @config */
+    private static array $cascade_deletes = [
+        'Items',
+    ];
+
+    /** @config */
     private static array $summary_fields = [
         'Title',
         'Slug',
     ];
 
+    #[Override]
     public function getCMSFields(): FieldList
     {
-        $this->beforeUpdateCMSFields(function ($fields) {
+        $this->beforeUpdateCMSFields(function (FieldList $fields): void {
             if ($this->IsProtected()) {
-                $fields->dataFieldByName('Slug')->setReadonly(true);
+                $fields->dataFieldByName('Slug')?->setReadonly(true);
             }
 
             $fields->removeByName([
@@ -54,7 +62,7 @@ class Menu extends DataObject implements TemplateGlobalProvider
             ]);
 
             if ($this->exists()) {
-                $gridConfig = new GridFieldConfig_RelationEditor();
+                $gridConfig = GridFieldConfig_RelationEditor::create();
                 $gridConfig->addComponent(GridFieldOrderableRows::create());
                 $fields->addFieldToTab('Root.Main', GridField::create('Items', 'Items', $this->Items(), $gridConfig));
             }
@@ -63,6 +71,7 @@ class Menu extends DataObject implements TemplateGlobalProvider
         return parent::getCMSFields();
     }
 
+    #[Override]
     public function onBeforeWrite(): void
     {
         parent::onBeforeWrite();
@@ -72,89 +81,74 @@ class Menu extends DataObject implements TemplateGlobalProvider
         }
     }
 
-    public function onBeforeDelete(): void
-    {
-        parent::onBeforeDelete();
-
-        foreach ($this->Items() as $item) {
-            $item->delete();
-        }
-    }
-
     public function IsProtected(): bool
     {
-        $protectedMenus = $this->Config()->get('protected_menus');
-
-        if ($protectedMenus && $this->Slug && in_array($this->Slug, $protectedMenus, true)) {
-            return true;
-        }
-
-        return false;
+        $protectedMenus = static::config()->get('protected_menus');
+        return is_array($protectedMenus) && $this->Slug && in_array($this->Slug, $protectedMenus, true);
     }
 
     /**
-     * @param null|int|Member $member
+     * @param mixed[] $context
      */
-    public function canCreate($member = null, $context = []): bool
+    #[Override]
+    public function canCreate(mixed $member = null, mixed $context = []): bool
     {
-        if (Permission::checkMember($member, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
+        if (Permission::checkMember($member ?? 0, 'CMS_ACCESS_' . MenusAdmin::class)) {
             return true;
         }
 
-        return parent::canCreate($member);
+        return parent::canCreate($member, $context);
     }
 
-    /**
-     * @param null|int|Member $member
-     */
-    public function canView($member = null): bool
+    #[Override]
+    public function canView(mixed $member = null): bool
     {
-        if (Permission::checkMember($member, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
+        if (Permission::checkMember($member ?? 0, 'CMS_ACCESS_' . MenusAdmin::class)) {
             return true;
         }
 
         return parent::canView($member);
     }
 
-    /**
-     * @param null|int|Member $member
-     */
-    public function canEdit($member = null): bool
+    #[Override]
+    public function canEdit(mixed $member = null): bool
     {
-        if (Permission::checkMember($member, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
+        if (Permission::checkMember($member ?? 0, 'CMS_ACCESS_' . MenusAdmin::class)) {
             return true;
         }
 
         return parent::canEdit($member);
     }
 
-    public function canDelete($member = null): bool
+    #[Override]
+    public function canDelete(mixed $member = null): bool
     {
         if ($this->IsProtected()) {
             return false;
         }
 
-        if (Permission::checkMember($member, 'CMS_ACCESS_WeDevelop\Menustructure\Admin\MenusAdmin')) {
+        if (Permission::checkMember($member ?? 0, 'CMS_ACCESS_' . MenusAdmin::class)) {
             return true;
         }
 
         return parent::canDelete($member);
     }
 
-    public function forTemplate(): DBHTMLText
+    #[Override]
+    public function forTemplate(): string
     {
-        return $this->renderWith(self::class);
+        return (string)$this->renderWith(self::class);
     }
 
-    public static function ViewableMenustructureMenu(string $slug, string $template): ?ViewableData
+    public static function ViewableMenustructureMenu(string $slug, string $template): ?DBHTMLText
     {
         $menu = self::MenustructureMenu($slug);
 
-        if ($menu instanceof Menu) {
-            return $menu->renderWith($template);
+        if (!$menu instanceof Menu) {
+            return null;
         }
 
-        return $menu;
+        return $menu->renderWith($template);
     }
 
     public static function MenustructureMenu(string $slug): ?Menu
@@ -164,6 +158,9 @@ class Menu extends DataObject implements TemplateGlobalProvider
         ])->first();
     }
 
+    /**
+     * @return array<int, string>
+     */
     public static function get_template_global_variables(): array
     {
         return [

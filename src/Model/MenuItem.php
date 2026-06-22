@@ -1,7 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace WeDevelop\Menustructure\Model;
 
+use DateTime;
+use Override;
 use SilverStripe\Assets\File;
 use SilverStripe\CMS\Model\SiteTree;
 use SilverStripe\Control\Controller;
@@ -13,7 +17,6 @@ use SilverStripe\Forms\TextField;
 use SilverStripe\Forms\TreeDropdownField;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\HasManyList;
-use SilverStripe\Security\Member;
 use SilverStripe\Security\Permission;
 use Symbiote\GridFieldExtensions\GridFieldOrderableRows;
 use UncleCheese\DisplayLogic\Forms\Wrapper;
@@ -26,27 +29,20 @@ use WeDevelop\Menustructure\Admin\MenusAdmin;
  * @property string $Url
  * @property int $LinkedPageID
  * @method File File()
+ * @method Menu Menu()
  * @method MenuItem ParentItem()
- * @method HasManyList Items()
+ * @method HasManyList<MenuItem> Items()
  * @method SiteTree LinkedPage()
  */
 class MenuItem extends DataObject
 {
-    private const LINK_TYPE_PAGE = 'page';
-
-    private const LINK_TYPE_URL = 'url';
-
-    private const LINK_TYPE_FILE = 'file';
-    
-    private const LINK_TYPE_NO_LINK = 'no-link';
-
     /** @config */
     private static string $table_name = 'Menustructure_MenuItem';
 
     /** @config */
     private static array $db = [
         'Title' => 'Varchar',
-        'LinkType' => 'Varchar',
+        'LinkType' => "Enum('page,url,file,no-link,breakpoint', 'no-link')",
         'Url' => 'Varchar(255)',
         'OpenInNewWindow' => 'Boolean',
         'Sort' => 'Int',
@@ -67,8 +63,9 @@ class MenuItem extends DataObject
         'Items' => MenuItem::class,
     ];
 
-    private static array $owns = [
-        'File',
+    /** @config */
+    private static array $cascade_deletes = [
+        'Items',
     ];
 
     /** @config */
@@ -76,13 +73,6 @@ class MenuItem extends DataObject
         'Title',
         'LinkType',
         'OpenInNewWindow',
-    ];
-
-    private static array $link_types = [
-        self::LINK_TYPE_PAGE => 'Page',
-        self::LINK_TYPE_URL => 'URL',
-        self::LINK_TYPE_FILE => 'File',
-        self::LINK_TYPE_NO_LINK => 'Not linked',
     ];
 
     /** @config */
@@ -94,45 +84,61 @@ class MenuItem extends DataObject
     /** @config */
     private static bool $enable_query_string = false;
 
+    #[Override]
     public function getCMSFields(): FieldList
     {
-        $this->beforeUpdateCMSFields(function ($fields) {
+        $this->beforeUpdateCMSFields(function (FieldList $fields): void {
             $fields->removeByName([
                 'Sort',
                 'ParentItemID',
                 'MenuID',
             ]);
 
-            $fields->replaceField('LinkType', DropdownField::create('LinkType', $this->fieldLabel('LinkType'), $this->getLinkTypes()));
+            $fields->replaceField('LinkType', DropdownField::create('LinkType', $this->fieldLabel('LinkType'), LinkType::dropdownSource()));
             $fields->replaceField('LinkedPageID', $linkedPageWrapper = Wrapper::create(TreeDropdownField::create('LinkedPageID', $this->fieldLabel('LinkedPage'), SiteTree::class)));
 
-            $linkedPageWrapper->displayIf('LinkType')->isEqualTo(self::LINK_TYPE_PAGE);
-            $fields->dataFieldByName('File')->displayIf('LinkType')->isEqualTo(self::LINK_TYPE_FILE);
-            $fields->dataFieldByName('Url')->displayIf('LinkType')->isEqualTo(self::LINK_TYPE_URL);
-            $fields->dataFieldByName('OpenInNewWindow')->displayIf('LinkType')->isEqualTo(self::LINK_TYPE_PAGE)->orIf('LinkType')->isEqualTo(self::LINK_TYPE_URL)->orIf('LinkType')->isEqualTo(self::LINK_TYPE_FILE);
+            $linkedPageWrapper->displayIf('LinkType')->isEqualTo(LinkType::Page->value);
 
-            if (self::config()->enable_query_string) {
-                /** @var TextField $queryStringField */
+            $fileField = $fields->dataFieldByName('File');
+            $fileField?->displayIf('LinkType')->isEqualTo(LinkType::File->value);
+
+            $urlField = $fields->dataFieldByName('Url');
+            $urlField?->displayIf('LinkType')->isEqualTo(LinkType::Url->value);
+
+            $openInNewWindow = $fields->dataFieldByName('OpenInNewWindow');
+            $openInNewWindow?->displayIf('LinkType')->isEqualTo(LinkType::Page->value)
+                ->orIf('LinkType')->isEqualTo(LinkType::Url->value)
+                ->orIf('LinkType')->isEqualTo(LinkType::File->value);
+
+            if (self::config()->get('enable_query_string')) {
+                /** @var TextField|null $queryStringField */
                 $queryStringField = $fields->dataFieldByName('QueryString');
-                $queryStringField->displayIf('LinkType')->isEqualTo(self::LINK_TYPE_PAGE);
-                $queryStringField->setDescription('Example: <code>foo=bar&john=doe</code>');
-                $fields->addFieldToTab('Root.Main', $queryStringField);
+                if ($queryStringField !== null) {
+                    $queryStringField->displayIf('LinkType')->isEqualTo(LinkType::Page->value);
+                    $queryStringField->setDescription('Example: <code>foo=bar&john=doe</code>');
+                    $fields->addFieldToTab('Root.Main', $queryStringField);
+                }
             } else {
                 $fields->removeByName('QueryString');
             }
 
-            if (self::config()->enable_page_anchor) {
-                $fields->dataFieldByName('AnchorText')->displayIf('LinkType')->isEqualTo(self::LINK_TYPE_PAGE);
-                $fields->addFieldToTab('Root.Main', $fields->dataFieldByName('AnchorText'));
+            if (self::config()->get('enable_page_anchor')) {
+                $anchorField = $fields->dataFieldByName('AnchorText');
+                if ($anchorField !== null) {
+                    $anchorField->displayIf('LinkType')->isEqualTo(LinkType::Page->value);
+                    $fields->addFieldToTab('Root.Main', $anchorField);
+                }
             } else {
                 $fields->removeByName('AnchorText');
             }
 
-            $fields->addFieldToTab('Root.Main', $fields->dataFieldByName('OpenInNewWindow'));
+            if ($openInNewWindow !== null) {
+                $fields->addFieldToTab('Root.Main', $openInNewWindow);
+            }
 
             $fields->removeByName('Items');
             if ($this->exists()) {
-                $gridConfig = new GridFieldConfig_RelationEditor();
+                $gridConfig = GridFieldConfig_RelationEditor::create();
                 $gridConfig->addComponent(GridFieldOrderableRows::create());
                 $fields->addFieldToTab('Root.Main', GridField::create('Items', 'Items', $this->Items(), $gridConfig));
             }
@@ -141,133 +147,121 @@ class MenuItem extends DataObject
         return parent::getCMSFields();
     }
 
-    private function getLinkTypes(): array
+    public function getLink(): ?string
     {
-        $linkTypes = self::$link_types;
+        $type = LinkType::tryFrom($this->LinkType ?? '');
 
-        $this->extend('updateLinkTypes', $linkTypes);
-
-        return $linkTypes;
-    }
-
-    public function getLink(): string
-    {
-        $link = match ($this->LinkType) {
-            'url' => $this->Url,
-            'page' => $this->LinkedPage()->Link(),
-            'file' => $link = $this->File()->Link(),
-            default => ''
+        $link = match ($type) {
+            LinkType::Url => $this->Url ?: null,
+            LinkType::Page => $this->LinkedPage()->exists() ? (string)$this->LinkedPage()->Link() : null,
+            LinkType::File => $this->File()->exists() ? (string)$this->File()->Link() : null,
+            LinkType::NoLink, LinkType::Breakpoint, null => null,
         };
 
-        if ($this->LinkType === self::LINK_TYPE_PAGE && self::config()->enable_query_string && $this->QueryString) {
-            $link = sprintf('%s?%s', $link, $this->QueryString);
-        }
+        if ($link !== null && $type === LinkType::Page) {
+            if (self::config()->get('enable_query_string') && $this->QueryString) {
+                $link .= '?' . $this->QueryString;
+            }
 
-        if ($this->LinkType === self::LINK_TYPE_PAGE && self::config()->enable_page_anchor && $this->AnchorText) {
-            $link = sprintf('%s#%s', $link, $this->AnchorText);
+            if (self::config()->get('enable_page_anchor') && $this->AnchorText) {
+                $link .= '#' . $this->AnchorText;
+            }
         }
 
         $this->extend('updateLink', $link);
 
-        return $link ?? '';
+        return $link;
     }
 
     public function LinkingMode(): string
     {
-        if ($this->LinkType === self::LINK_TYPE_PAGE) {
-            return Controller::curr()->ID === $this->LinkedPageID ? 'current' : 'link';
+        if ($this->LinkType !== LinkType::Page->value) {
+            return 'link';
         }
 
-        return 'link';
+        $controller = Controller::curr();
+
+        return $controller !== null && $controller->ID === $this->LinkedPageID ? 'current' : 'link';
     }
 
     /**
-     * @param null|int|Member $member
+     * @param mixed[] $context
      */
-    public function canCreate($member = null, $context = []): bool
+    #[Override]
+    public function canCreate(mixed $member = null, mixed $context = []): bool
     {
-        if (Permission::checkMember($member, 'CMS_ACCESS_' . MenusAdmin::class)) {
+        if (Permission::checkMember($member ?? 0, 'CMS_ACCESS_' . MenusAdmin::class)) {
             return true;
         }
 
         return parent::canCreate($member, $context);
     }
 
-    /**
-     * @param null|int|Member $member
-     */
-    public function canView($member = null): bool
+    #[Override]
+    public function canView(mixed $member = null): bool
     {
-        if (Permission::checkMember($member, 'CMS_ACCESS_' . MenusAdmin::class)) {
+        if (Permission::checkMember($member ?? 0, 'CMS_ACCESS_' . MenusAdmin::class)) {
             return true;
         }
 
         return parent::canView($member);
     }
 
-    /**
-     * @param null|int|Member $member
-     */
-    public function canEdit($member = null): bool
+    #[Override]
+    public function canEdit(mixed $member = null): bool
     {
-        if (Permission::checkMember($member, 'CMS_ACCESS_' . MenusAdmin::class)) {
+        if (Permission::checkMember($member ?? 0, 'CMS_ACCESS_' . MenusAdmin::class)) {
             return true;
         }
 
         return parent::canEdit($member);
     }
 
-    /**
-     * @param null|int|Member $member
-     */
-    public function canDelete($member = null): bool
+    #[Override]
+    public function canDelete(mixed $member = null): bool
     {
-        if (Permission::checkMember($member, 'CMS_ACCESS_' . MenusAdmin::class)) {
+        if (Permission::checkMember($member ?? 0, 'CMS_ACCESS_' . MenusAdmin::class)) {
             return true;
         }
 
         return parent::canDelete($member);
     }
 
+    #[Override]
     public function onBeforeDelete(): void
     {
         parent::onBeforeDelete();
 
-        /** @var Menu $menu */
         $menu = $this->Menu();
-
-        /** @var MenuItem $parentItem */
         $parentItem = $this->ParentItem();
 
-        $now = new \DateTime();
+        $now = new DateTime();
 
-        if ($menu && $menu->exists()) {
+        if ($menu->exists()) {
             $menu->LastEdited = $now->format('Y-m-d H:i:s');
             $menu->write();
         }
 
-        if ($parentItem && $parentItem->exists()) {
+        if ($parentItem->exists()) {
             $parentItem->LastEdited = $now->format('Y-m-d H:i:s');
             $parentItem->write();
         }
     }
 
-    public function onAfterWrite()
+    #[Override]
+    public function onAfterWrite(): void
     {
         parent::onAfterWrite();
 
-        /** @var Menu $menu */
         $menu = $this->Menu();
-
-        /** @var MenuItem $parentItem */
         $parentItem = $this->ParentItem();
 
-        if ($menu && $menu->exists()) {
+        if ($menu->exists()) {
             $menu->LastEdited = $this->LastEdited;
             $menu->write();
         }
 
-        if ($parentItem && $parentItem->exists()) {
+        if ($parentItem->exists()) {
             $parentItem->LastEdited = $this->LastEdited;
             $parentItem->write();
         }

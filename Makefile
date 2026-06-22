@@ -1,34 +1,63 @@
-.PHONY: *
+COMPOSE := docker compose -f .docker/compose.yml
 
-.DEFAULT_GOAL := help
-docker := $(shell if [ `pwd` != "/app" ]; then echo 'docker compose exec php'; fi;)
+.PHONY: up down destroy build ensure-up test coverage analyse rector rector-dry flush dev-build sh
 
-HELP_FUNCTION = \
-	%help; \
-	while(<>) { push @{$$help{$$2 // 'options'}}, [$$1, $$3] if /^(.+)\s*:.*\#\#(?:@(\w+))?\s(.*)$$/ }; \
-	print "usage: make [target]\n\n"; \
-	for (keys %help) { \
-		print "\033[33m $$_:\n"; \
-		printf "  \033[32m%-30s\033[0m %s\n", $$_->[0], $$_->[1] for @{$$help{$$_}} \
-	}
+## Generate .docker/.env with deterministic ports (auto-runs if missing)
+.docker/.env:
+	.docker/env.sh
 
-help: ##@develop Show this help.
-	@perl -e '$(HELP_FUNCTION)' $(MAKEFILE_LIST)
+## Start services (build if needed)
+up: .docker/.env
+	$(COMPOSE) up -d --build
+	@echo "\n  Testbed running at https://localhost:$$(grep WEB_PORT .docker/.env | cut -d= -f2)\n"
 
-build: ##@develop Build docker container and detach
-	docker compose up --build -d
+## Stop services
+down:
+	$(COMPOSE) down
 
-up: ##@develop Docker compose up
-	docker compose up -d
+## Stop services and remove volumes
+destroy:
+	$(COMPOSE) down -v
 
-down: ##@develop Docker compose down
-	docker compose down
+## Build images without starting
+build:
+	$(COMPOSE) build
 
-test: ##@develop Run code style test
-	${docker} ./vendor/bin/php-cs-fixer fix --diff --dry-run
+## Ensure services are running and ready
+ensure-up: .docker/.env
+	@$(COMPOSE) exec app true 2>/dev/null || $(COMPOSE) up -d --build --wait
 
-fix-cs: ##@develop Fix code styling
-	${docker} ./vendor/bin/php-cs-fixer fix
+## Run PHPUnit
+test: ensure-up
+	$(COMPOSE) exec app vendor/bin/phpunit
 
-sh: ##@develop Open shell in container
-	${docker} sh
+## Run PHPUnit with code coverage (text summary on stdout, HTML at coverage/html, clover XML for CI)
+coverage: ensure-up
+	$(COMPOSE) exec app vendor/bin/phpunit \
+		--coverage-text \
+		--coverage-html /app/coverage/html \
+		--coverage-clover /app/coverage/clover.xml
+
+## Run PHPStan static analysis
+analyse: ensure-up
+	$(COMPOSE) exec app vendor/bin/phpstan analyse -c phpstan.neon.dist --memory-limit=512M
+
+## Run Rector refactoring (applies changes)
+rector: ensure-up
+	$(COMPOSE) exec app vendor/bin/rector process
+
+## Run Rector in dry-run mode (preview only)
+rector-dry: ensure-up
+	$(COMPOSE) exec app vendor/bin/rector process --dry-run
+
+## Clear SilverStripe cache
+flush: ensure-up
+	$(COMPOSE) exec app vendor/bin/sake flush
+
+## Run dev/build to rebuild the database and manifest
+dev-build: ensure-up
+	$(COMPOSE) exec app vendor/bin/sake dev/build flush=1
+
+## Open shell in the app container
+sh: ensure-up
+	$(COMPOSE) exec app sh
