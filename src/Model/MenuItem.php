@@ -33,6 +33,7 @@ use WeDevelop\Menustructure\Admin\MenusAdmin;
  * @method MenuItem ParentItem()
  * @method HasManyList<MenuItem> Items()
  * @method SiteTree LinkedPage()
+ * @see \WeDevelop\Menustructure\Tests\Model\MenuItemTest
  */
 class MenuItem extends DataObject
 {
