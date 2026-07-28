@@ -8,6 +8,7 @@
         "nested",
         "links"
     ],
+    "license": "MIT",
     "authors": [{
         "name": "WeDevelop",
         "email": "development@wedevelop.nl"

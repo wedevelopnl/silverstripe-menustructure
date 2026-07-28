@@ -43,6 +43,10 @@ First release on the SilverStripe 6 line. Targets PHP 8.3+ and SilverStripe `^6`
 - **`MenuItem::$owns`** — dead config (see Changed)
 - **`php-cs-fixer` integration** — code style is now enforced via Rector's `SilverstripeSetList::CODE_STYLE`
 
+### Fixed
+
+- **`license` declared in `composer.json`** (`MIT`, matching the `LICENSE` file that has shipped since the first release). Packagist reads the license from `composer.json`, so the package was previously listed as having no license
+
 ### Developer Experience
 
 - **PHPStan at level `max`** with `cambis/silverstan` ^2.1, `phpstan/phpstan-deprecation-rules`, and `tomasvotruba/type-coverage` at 100 %. Silverstan resolves SilverStripe's config conventions (private static `$db` / `$has_one` / `$has_many`, `Config_ForClass` access) which was the root cause of the bulk of the original analysis errors
