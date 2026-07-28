@@ -17,9 +17,9 @@ First release on the SilverStripe 6 line. Targets PHP 8.3+ and SilverStripe `^6`
 
 - **`breakpoint` link type on `MenuItem`** — a structural marker case alongside the existing `page` / `url` / `file` / `no-link` types. Templates can detect it via `$LinkType = "breakpoint"` and render dividers, mega-menu column breaks, or other non-clickable structural items separately from the labelled `no-link` case
 - **PHPUnit test suite** — first tests for the module, covering both `DataObject`s' behaviour: slug auto-fill, `protected_menus` config gating, permission delegation, `getLink()` across all `LinkType` branches (with `QueryString` / `AnchorText` config flips), `LinkingMode`, `getLevel`, and `LastEdited` cascade on write/delete
-- **GitHub Actions CI workflow** — static-analysis job (`make analyse` + `make rector-dry`) and a PHPUnit matrix across PHP 8.3 / 8.4 / 8.5 run on every push and PR to the `6` branch
-- **FrankenPHP-based dev environment** — `make up` provisions FrankenPHP 8.3 + MySQL 8 + Caddy with deterministic ports, replacing the legacy single-container `php-cs-fixer`-only setup. Ships `make` targets for `test`, `coverage`, `analyse`, `rector`, `rector-dry`, `flush`, `dev-build`, and `sh`
-- **Rector configuration** — `make rector` / `make rector-dry` target SS5→SS6 + PHP 8.3 + standard presets, applying both refactors and code style. Replaces the previous `php-cs-fixer` step entirely
+- **GitHub Actions CI workflow** — static-analysis job (`task analyse` + `task rector-dry`) and a PHPUnit matrix across PHP 8.3 / 8.4 / 8.5 run on every push and PR to the `6` branch
+- **FrankenPHP-based dev environment** — `task up` provisions FrankenPHP 8.3 + MySQL 8 + Caddy with deterministic ports, replacing the legacy single-container `php-cs-fixer`-only setup. Dev commands run through [Task](https://taskfile.dev) (`Taskfile.yml`): `test`, `coverage`, `analyse`, `rector`, `rector-dry`, `flush`, `dev-build`, and `sh`
+- **Rector configuration** — `task rector` / `task rector-dry` target SS5→SS6 + PHP 8.3 + standard presets, applying both refactors and code style. Replaces the previous `php-cs-fixer` step entirely
 - **Dependabot configuration** for Composer, the `.docker/` Dockerfile, and GitHub Actions versions
 - **Restructured documentation** — `docs/usage/templates.md`, `docs/usage/configuration.md`, `docs/architecture/data-model.md`, `docs/contributing.md` replace the single `docs/configuration.md` file
 - **`CHANGELOG.md` adopts Keep a Changelog format** — previous releases continue to be tracked on GitHub
@@ -52,6 +52,6 @@ First release on the SilverStripe 6 line. Targets PHP 8.3+ and SilverStripe `^6`
 - **PHPStan at level `max`** with `cambis/silverstan` ^2.1, `phpstan/phpstan-deprecation-rules`, and `tomasvotruba/type-coverage` at 100 %. Silverstan resolves SilverStripe's config conventions (private static `$db` / `$has_one` / `$has_many`, `Config_ForClass` access) which was the root cause of the bulk of the original analysis errors
 - **Deprecation rules surface SS6 deprecations as static-analysis errors** rather than runtime warnings — relevant because this branch will not be released alongside an SS5 backport
 - **`@covers` PHPDoc annotations replaced with `#[CoversClass]` attributes** in the test suite (PHPUnit 11 idiom)
-- **`.gitattributes` `export-ignore` entries** for `/.docker`, `/.github`, `/Makefile`, `/docs`, `/tests`, etc., so dev-only files don't ship in Packagist tarballs
+- **`.gitattributes` `export-ignore` entries** for `/.docker`, `/.github`, `/Taskfile.yml`, `/docs`, `/tests`, etc., so dev-only files don't ship in Packagist tarballs
 
 [6.0.0-rc.1]: https://github.com/wedevelopnl/silverstripe-menustructure/releases/tag/6.0.0-rc.1
