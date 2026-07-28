@@ -69,6 +69,14 @@ tasks:
         --coverage-html /app/coverage/html
         --coverage-clover /app/coverage/clover.xml
 
+  # --- Mutation testing -----------------------------------------------------
+
+  mutate:
+    desc: Run PHP mutation testing (Infection)
+    deps: [ensure-up]
+    cmds:
+      - "{{.COMPOSE}} exec app php -d memory_limit=1G vendor/bin/infection --threads=4"
+
   # --- Static analysis ------------------------------------------------------
 
   analyse:

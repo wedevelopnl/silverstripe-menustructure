@@ -3,6 +3,7 @@
 namespace WeDevelop\Menustructure\Tests\Model;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Dev\SapphireTest;
 use WeDevelop\Menustructure\Model\Menu;
@@ -46,9 +47,7 @@ class MenuTest extends SapphireTest
         $this->assertSame(strtolower($menu->Slug), $menu->Slug);
     }
 
-    /**
-     * @dataProvider isProtectedProvider
-     */
+    #[DataProvider('isProtectedProvider')]
     public function testIsProtectedHonoursProtectedMenusConfig(array $protectedMenus, bool $expected): void
     {
         Config::modify()->set(Menu::class, 'protected_menus', $protectedMenus);
@@ -77,9 +76,7 @@ class MenuTest extends SapphireTest
         $this->assertFalse($menu->canDelete());
     }
 
-    /**
-     * @dataProvider permissionMatrix
-     */
+    #[DataProvider('permissionMatrix')]
     public function testCanMethodHonoursAdminPermission(string $permission, string $method, bool $expected): void
     {
         // Keep canDelete out of the protected-menu gate; the protected case is
@@ -103,6 +100,35 @@ class MenuTest extends SapphireTest
             'canEdit falls through to parent without admin permission' => ['SOME_OTHER_PERMISSION', 'canEdit', false],
             'canDelete allowed with admin permission when not protected' => [self::ADMIN_PERMISSION, 'canDelete', true],
             'canDelete falls through to parent without admin permission when not protected' => ['SOME_OTHER_PERMISSION', 'canDelete', false],
+        ];
+    }
+
+    #[DataProvider('permissionMethods')]
+    public function testCanMethodHonoursExplicitMemberOverSessionUser(string $method): void
+    {
+        // See MenuItemTest for the rationale: the explicit $member argument must
+        // outrank the session user in both directions.
+        Config::modify()->set(Menu::class, 'protected_menus', []);
+
+        $privileged = $this->createMemberWithPermission(self::ADMIN_PERMISSION);
+        $unprivileged = $this->createMemberWithPermission('SOME_OTHER_PERMISSION');
+
+        $menu = $this->objFromFixture(Menu::class, 'primary');
+
+        $this->logInWithPermission('SOME_OTHER_PERMISSION');
+        $this->assertTrue($menu->$method($privileged), 'Explicit privileged member is honoured');
+
+        $this->logInWithPermission(self::ADMIN_PERMISSION);
+        $this->assertFalse($menu->$method($unprivileged), 'Explicit unprivileged member is refused');
+    }
+
+    public static function permissionMethods(): array
+    {
+        return [
+            'canCreate' => ['canCreate'],
+            'canView' => ['canView'],
+            'canEdit' => ['canEdit'],
+            'canDelete' => ['canDelete'],
         ];
     }
 

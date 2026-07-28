@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A SilverStripe CMS module (`wedevelopnl/silverstripe-menustructure`) that lets editors define multiple named, nested menus in the CMS and render them in templates by slug. PHP 8.3+, SilverStripe CMS `^6`, PSR-4 namespace `WeDevelop\Menustructure\` rooted at `src/`.
 
-The repo *is* the package — there is no surrounding application. The dev environment under `.docker/` builds a throwaway SilverStripe app (recipe-cms `^6`) that mounts the module at `/module` and pulls it in via a path repository, modelled on `silverstripe-grid/.docker/`. The dev-app `composer.json` adds the QA chain: `cambis/silverstan`, `phpstan/phpstan-deprecation-rules`, `tomasvotruba/type-coverage`, `wernerkrauss/silverstripe-rector`.
+The repo *is* the package — there is no surrounding application. The dev environment under `.docker/` builds a throwaway SilverStripe app (recipe-cms `^6`) that mounts the module at `/module` and pulls it in via a path repository, modelled on `silverstripe-grid/.docker/`. The dev-app `composer.json` adds the QA chain: `cambis/silverstan`, `phpstan/phpstan-deprecation-rules`, `tomasvotruba/type-coverage`, `wernerkrauss/silverstripe-rector`, `infection/infection`. QA tooling is declared **only** in `.docker/app/composer.json` — the module's own `composer.json` has no `require-dev` (it is installed as a path dependency, whose dev requirements Composer never installs).
 
 Per the SilverStripe convention, the long-lived release branch is named after the major SilverStripe version it targets — this work merges into the `6` branch (not `main`). The previous SS5 line stays on its own line. Because this branch will not be released alongside an SS5 backport, `phpstan-deprecation-rules` is enabled at level max so any deprecated SS6 API surfaces immediately rather than via runtime warnings.
 
@@ -19,6 +19,7 @@ Per the SilverStripe convention, the long-lived release branch is named after th
 | `task down` / `task destroy` | Stop services / stop and wipe volumes |
 | `task sh` | Open a shell inside the `app` container |
 | `task test` / `task coverage` | Run PHPUnit (`.docker/app/phpunit.xml.dist`) — `coverage` adds text + HTML + clover output |
+| `task mutate` | Run Infection mutation testing (`.docker/app/infection.json5`) — not in CI, run locally |
 | `task analyse` | Run PHPStan at level `max` (incl. deprecation rules + 100 % type coverage) |
 | `task rector` / `task rector-dry` | Apply / preview Rector refactors (SS5→SS6 set + PHP 8.3 set + standard presets) |
 | `task flush` / `task dev-build` | `sake flush` / `sake dev/build flush=1` |
@@ -97,6 +98,12 @@ WeDevelop\Menustructure\Model\Menu:
 Config at `.docker/app/rector.php`. Sets enabled: `deadCode`, `codeQuality`, `typeDeclarations`, `instanceOf`, `earlyReturn`, `rectorPreset`, PHP 8.3, `SilverstripeSetList::CODE_STYLE`, `SilverstripeLevelSetList::UP_TO_SS_6_0`. Three rules are explicitly skipped (subjective style — matching the silverstripe-grid setup): `ChangeOrIfContinueToMultiContinueRector`, `FlipTypeControlToUseExclusiveTypeRector`, `PostIncDecToPreIncDecRector`.
 
 The `wernerkrauss/silverstripe-rector` SS6 ruleset only renames a handful of classes (`ViewableData` → `ModelData` and friends). It does **not** move `DBHTMLText`, `HasManyList`, or other ORM types — those still live under `SilverStripe\ORM\…` in SS6. Don't manually rewrite imports based on a guess; verify against `vendor/silverstripe/framework/src/` first.
+
+## Mutation testing
+
+Config at `.docker/app/infection.json5`; run with `task mutate`. Source is `/module/src`; logs land in `infection/` (gitignored). Deliberately **not** wired into CI — matches `silverstripe-grid`.
+
+Rules for escaped mutants, in order: delete dead code → assert the behaviour → only then suppress. A suppression MUST carry an inline comment proving equivalence and use the narrowest scope that works. Existing suppressions cover CMS form wiring (`->displayIf`, `->orIf`, `->setDescription`, `->removeByName`, `->addFieldToTab`), `parent::on*Write`/`on*Delete` lifecycle calls, and `->extend()` hook dispatch; `PublicVisibility`/`ProtectedVisibility` are off because SilverStripe resolves those members reflectively. `ignoreSourceCodeByRegex` does not match across newlines — multi-line nodes need `ignore` (`Class`, `Class::method`, `Class::method::line`). Never lower `minMsi` to make a run pass.
 
 ## CI
 

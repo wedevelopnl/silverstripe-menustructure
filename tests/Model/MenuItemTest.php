@@ -3,6 +3,7 @@
 namespace WeDevelop\Menustructure\Tests\Model;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use SilverStripe\CMS\Model\SiteTree;
 use SilverStripe\Control\Controller;
 use SilverStripe\Control\HTTPRequest;
@@ -247,9 +248,7 @@ class MenuItemTest extends SapphireTest
         $this->assertNotNull(MenuItem::get()->byID($sibling->ID), 'Unrelated siblings are not touched');
     }
 
-    /**
-     * @dataProvider permissionMatrix
-     */
+    #[DataProvider('permissionMatrix')]
     public function testCanMethodHonoursAdminPermission(string $permission, string $method, bool $expected): void
     {
         $this->logInWithPermission($permission);
@@ -271,6 +270,62 @@ class MenuItemTest extends SapphireTest
             'canDelete allowed with admin permission' => [self::ADMIN_PERMISSION, 'canDelete', true],
             'canDelete falls through to parent without admin permission' => ['SOME_OTHER_PERMISSION', 'canDelete', false],
         ];
+    }
+
+    #[DataProvider('permissionMethods')]
+    public function testCanMethodHonoursExplicitMemberOverSessionUser(string $method): void
+    {
+        // The can* methods take a $member argument and must judge that member,
+        // not whoever happens to be logged in. Both directions are asserted:
+        // an explicit privileged member grants access to an unprivileged
+        // session, and an explicit unprivileged member is refused even while
+        // an admin holds the session.
+        $privileged = $this->createMemberWithPermission(self::ADMIN_PERMISSION);
+        $unprivileged = $this->createMemberWithPermission('SOME_OTHER_PERMISSION');
+
+        $item = $this->objFromFixture(MenuItem::class, 'topLevel');
+
+        $this->logInWithPermission('SOME_OTHER_PERMISSION');
+        $this->assertTrue($item->$method($privileged), 'Explicit privileged member is honoured');
+
+        $this->logInWithPermission(self::ADMIN_PERMISSION);
+        $this->assertFalse($item->$method($unprivileged), 'Explicit unprivileged member is refused');
+    }
+
+    public static function permissionMethods(): array
+    {
+        return [
+            'canCreate' => ['canCreate'],
+            'canView' => ['canView'],
+            'canEdit' => ['canEdit'],
+            'canDelete' => ['canDelete'],
+        ];
+    }
+
+    public function testGetLinkReturnsNullForUnrecognisedLinkType(): void
+    {
+        // Rows written before a LinkType case existed (or with an empty column)
+        // leave tryFrom() returning null. getLink() must fall through to null
+        // rather than blowing up on an unhandled match.
+        $item = $this->objFromFixture(MenuItem::class, 'topLevel');
+        $item->setField('LinkType', 'legacy-value');
+
+        $this->assertNull($item->getLink());
+    }
+
+    public function testLinkingModeReturnsLinkForNonPageTypeWithStaleLinkedPage(): void
+    {
+        // Switching an item from page to url leaves LinkedPageID populated. The
+        // non-page branch must win on LinkType alone — if it instead fell through
+        // to the LinkedPageID comparison, this item would light up as 'current'
+        // while the user is on the stale page.
+        $item = $this->objFromFixture(MenuItem::class, 'topLevel');
+        $page = $this->objFromFixture(SiteTree::class, 'homepage');
+        $item->LinkedPageID = $page->ID;
+
+        $this->withCurrentController($page->ID, function () use ($item) {
+            $this->assertSame('link', $item->LinkingMode());
+        });
     }
 
     /**
