@@ -8,7 +8,7 @@ Everything you need to run the module locally, make changes, and run the QA suit
 - [Task](https://taskfile.dev/installation) 3.x — the task runner all dev commands go through (`brew install go-task`)
 - Composer (only needed if you plan to edit `composer.json` outside the container)
 
-The dev container ships PHP 8.3, FrankenPHP, MySQL 8, and the full QA toolchain (`phpstan`, `cambis/silverstan`, `phpstan/phpstan-deprecation-rules`, `tomasvotruba/type-coverage`, `wernerkrauss/silverstripe-rector`). You don't need any of those installed locally.
+The dev container ships PHP 8.3, FrankenPHP, MySQL 8, and the full QA toolchain (`phpstan`, `cambis/silverstan`, `phpstan/phpstan-deprecation-rules`, `tomasvotruba/type-coverage`, `wernerkrauss/silverstripe-rector`, `infection/infection`). You don't need any of those installed locally.
 
 ## Quick start
 
@@ -46,8 +46,21 @@ Tasks pass through to `docker compose -f .docker/compose.yml exec app …`. The 
 |---------|-------------|
 | `task test` | Run the PHPUnit suite (`tests/Model/*`) |
 | `task coverage` | PHPUnit with text + HTML + Clover coverage reports (written to `coverage/`) |
+| `task mutate` | Mutation testing (Infection) — reports written to `infection/` |
 
 Tests are SilverStripe `SapphireTest` instances wired up through the dev-app's PHPUnit config (`.docker/app/phpunit.xml.dist`). Fixtures live in `tests/fixtures/*.yml`.
+
+### Mutation testing
+
+`task mutate` runs [Infection](https://infection.github.io/) over `src/` and fails if the mutation score index drops below the `minMsi` in `.docker/app/infection.json5`. It is not part of CI — run it locally when changing behaviour, not just when adding tests.
+
+An *escaped* mutant means the test suite did not notice the change. Fix it in this order:
+
+1. Delete the code, if the mutation proves it is dead.
+2. Assert the behaviour so the mutant dies — the usual answer.
+3. Only if the mutant is genuinely *equivalent* (no observable behaviour differs), suppress it in `infection.json5` at the narrowest scope that works, with a comment proving why. The existing suppressions are all CMS form wiring and framework lifecycle contracts; follow that standard rather than adding a bare mutator toggle.
+
+Note that `ignoreSourceCodeByRegex` patterns do not match across newlines — a mutated node spanning several lines needs the `ignore` form (`Class`, `Class::method`, or `Class::method::line`).
 
 ## Quality
 
