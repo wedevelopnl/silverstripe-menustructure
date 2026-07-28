@@ -1,0 +1,104 @@
+version: '3'
+
+# Build/dev task runner for the SilverStripe Menustructure module.
+# Replaces the former Makefile. Install Task: https://taskfile.dev/installation
+
+vars:
+  COMPOSE: docker compose -f .docker/compose.yml
+
+tasks:
+  # --- Docker environment ---------------------------------------------------
+
+  docker-env:
+    desc: Generate .docker/.env with deterministic ports (only if missing)
+    cmds:
+      - .docker/env.sh
+    status:
+      - test -f .docker/.env
+
+  up:
+    desc: Start services (build if needed)
+    deps: [docker-env]
+    cmds:
+      - "{{.COMPOSE}} up -d --build"
+      - 'port=$(grep WEB_PORT .docker/.env | cut -d= -f2); printf "\n  Testbed running at \033]8;;https://localhost:%s\ahttps://localhost:%s\033]8;;\a\n\n" "$port" "$port"'
+
+  down:
+    desc: Stop services
+    cmds:
+      - "{{.COMPOSE}} down"
+
+  destroy:
+    desc: Stop services and remove volumes
+    cmds:
+      - "{{.COMPOSE}} down -v"
+
+  build:
+    desc: Build images without starting
+    cmds:
+      - "{{.COMPOSE}} build"
+
+  ensure-up:
+    desc: Ensure services are running and ready
+    deps: [docker-env]
+    cmds:
+      - "{{.COMPOSE}} exec app true 2>/dev/null || {{.COMPOSE}} up -d --build --wait"
+
+  sh:
+    desc: Open a shell inside the app container
+    deps: [ensure-up]
+    interactive: true
+    cmds:
+      - "{{.COMPOSE}} exec app sh"
+
+  # --- Tests ----------------------------------------------------------------
+
+  test:
+    desc: Run PHPUnit
+    deps: [ensure-up]
+    cmds:
+      - "{{.COMPOSE}} exec app vendor/bin/phpunit"
+
+  coverage:
+    desc: Run PHPUnit with coverage (text summary on stdout, HTML at coverage/html, Clover XML for CI)
+    deps: [ensure-up]
+    cmds:
+      - >-
+        {{.COMPOSE}} exec app vendor/bin/phpunit
+        --coverage-text
+        --coverage-html /app/coverage/html
+        --coverage-clover /app/coverage/clover.xml
+
+  # --- Static analysis ------------------------------------------------------
+
+  analyse:
+    desc: Run PHPStan static analysis
+    deps: [ensure-up]
+    cmds:
+      - "{{.COMPOSE}} exec app vendor/bin/phpstan analyse -c phpstan.neon.dist --memory-limit=512M"
+
+  rector:
+    desc: Run Rector refactoring (applies changes)
+    deps: [ensure-up]
+    cmds:
+      - "{{.COMPOSE}} exec app vendor/bin/rector process"
+
+  rector-dry:
+    desc: Run Rector in dry-run mode (preview only)
+    deps: [ensure-up]
+    cmds:
+      - "{{.COMPOSE}} exec app vendor/bin/rector process --dry-run"
+
+  # --- SilverStripe helpers -------------------------------------------------
+
+  flush:
+    desc: Clear SilverStripe cache
+    deps: [ensure-up]
+    cmds:
+      - "{{.COMPOSE}} exec app vendor/bin/sake flush"
+
+  dev-build:
+    desc: Run dev/build to rebuild the database and manifest
+    deps: [ensure-up]
+    cmds:
+      - "{{.COMPOSE}} exec app vendor/bin/sake dev/build flush=1"
