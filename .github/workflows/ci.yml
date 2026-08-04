@@ -17,7 +17,7 @@ jobs:
     env:
       COMPOSE: docker compose -f .docker/compose.yml
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: arduino/setup-task@v2
         with:
           version: 3.x
@@ -41,7 +41,7 @@ jobs:
       PHP_VERSION: ${{ matrix.php }}
       COMPOSE: docker compose -f .docker/compose.yml
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: arduino/setup-task@v2
         with:
           version: 3.x
