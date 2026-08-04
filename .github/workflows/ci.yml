@@ -18,7 +18,7 @@ jobs:
       COMPOSE: docker compose -f .docker/compose.yml
     steps:
       - uses: actions/checkout@v6
-      - uses: arduino/setup-task@v2
+      - uses: arduino/setup-task@v3
         with:
           version: 3.x
           repo-token: ${{ secrets.GITHUB_TOKEN }}
@@ -42,7 +42,7 @@ jobs:
       COMPOSE: docker compose -f .docker/compose.yml
     steps:
       - uses: actions/checkout@v6
-      - uses: arduino/setup-task@v2
+      - uses: arduino/setup-task@v3
         with:
           version: 3.x
           repo-token: ${{ secrets.GITHUB_TOKEN }}
