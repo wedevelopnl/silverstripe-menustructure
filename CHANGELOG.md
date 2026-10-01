@@ -9,7 +9,26 @@ Releases prior to `6.0.0-rc.1` were tracked exclusively as GitHub releases. See
 [github.com/wedevelopnl/silverstripe-menustructure/releases](https://github.com/wedevelopnl/silverstripe-menustructure/releases)
 for the historical record.
 
-## [6.0.0-rc.1] - Unreleased
+## [6.0.0] - 2026-10-01
+
+First stable release on the SilverStripe 6 line. No changes to the module's PHP API, templates, or database schema since `6.0.0-rc.1` — see that entry for the full upgrade notes from the previous line.
+
+### Added
+
+- **Mutation testing with Infection** — `task mutate` runs `infection/infection` over `src/` against the PHPUnit suite, gated on the `minMsi` in `.docker/app/infection.json5` (98, against a measured 99 %). Local-only; not part of CI
+- **Permission delegation tests** — both models now assert that the explicit `$member` argument to `canCreate` / `canView` / `canEdit` / `canDelete` outranks the session user in both directions. Surfaced by mutation testing: the argument was previously never passed by any test
+- **`getLink()` and `LinkingMode()` edge-case tests** — an unrecognised `LinkType` (legacy or empty column value) falls through to `null` instead of an unhandled match, and a non-page item with a leftover `LinkedPageID` reports `link` rather than `current`
+
+### Changed
+
+- **Dev commands migrated from Make to [Task](https://taskfile.dev)** — `Taskfile.yml` replaces the `Makefile` with the same targets (`up`, `test`, `coverage`, `analyse`, `rector`, `rector-dry`, `flush`, `dev-build`, `sh`, …). CI installs Task in both jobs, and the `.gitattributes` `export-ignore` entry follows the rename
+- **PHPUnit config modernised** — `cacheResultFile` → `cacheDirectory` and `<coverage><include>` → `<source><include>`. The old forms still ran under PHPUnit 11 but fail its XSD, which blocked Infection from rewriting the config. Test metadata moved from `@dataProvider` docblocks to `#[DataProvider]` attributes, clearing all PHPUnit 11 deprecation notices
+
+### Fixed
+
+- **`license` declared in `composer.json`** (`MIT`, matching the `LICENSE` file that has shipped since the first release). Packagist reads the license from `composer.json`, so the package was previously listed as having no license
+
+## [6.0.0-rc.1] - 2026-07-27
 
 First release on the SilverStripe 6 line. Targets PHP 8.3+ and SilverStripe `^6`. The previous SilverStripe 5 line continues on its own branch and is not affected.
 
@@ -17,19 +36,15 @@ First release on the SilverStripe 6 line. Targets PHP 8.3+ and SilverStripe `^6`
 
 - **`breakpoint` link type on `MenuItem`** — a structural marker case alongside the existing `page` / `url` / `file` / `no-link` types. Templates can detect it via `$LinkType = "breakpoint"` and render dividers, mega-menu column breaks, or other non-clickable structural items separately from the labelled `no-link` case
 - **PHPUnit test suite** — first tests for the module, covering both `DataObject`s' behaviour: slug auto-fill, `protected_menus` config gating, permission delegation, `getLink()` across all `LinkType` branches (with `QueryString` / `AnchorText` config flips), `LinkingMode`, `getLevel`, and `LastEdited` cascade on write/delete
-- **Mutation testing with Infection** — `task mutate` runs `infection/infection` over `src/` against the PHPUnit suite, gated on the `minMsi` in `.docker/app/infection.json5` (98, against a measured 99 %). Local-only; not part of CI
-- **Permission delegation tests** — both models now assert that the explicit `$member` argument to `canCreate` / `canView` / `canEdit` / `canDelete` outranks the session user in both directions. Surfaced by mutation testing: the argument was previously never passed by any test
-- **`getLink()` and `LinkingMode()` edge-case tests** — an unrecognised `LinkType` (legacy or empty column value) falls through to `null` instead of an unhandled match, and a non-page item with a leftover `LinkedPageID` reports `link` rather than `current`
-- **GitHub Actions CI workflow** — static-analysis job (`task analyse` + `task rector-dry`) and a PHPUnit matrix across PHP 8.3 / 8.4 / 8.5 run on every push and PR to the `6` branch
-- **FrankenPHP-based dev environment** — `task up` provisions FrankenPHP 8.3 + MySQL 8 + Caddy with deterministic ports, replacing the legacy single-container `php-cs-fixer`-only setup. Dev commands run through [Task](https://taskfile.dev) (`Taskfile.yml`): `test`, `coverage`, `analyse`, `rector`, `rector-dry`, `flush`, `dev-build`, and `sh`
-- **Rector configuration** — `task rector` / `task rector-dry` target SS5→SS6 + PHP 8.3 + standard presets, applying both refactors and code style. Replaces the previous `php-cs-fixer` step entirely
+- **GitHub Actions CI workflow** — static-analysis job (`make analyse` + `make rector-dry`) and a PHPUnit matrix across PHP 8.3 / 8.4 / 8.5 run on every push and PR to the `6` branch
+- **FrankenPHP-based dev environment** — `make up` provisions FrankenPHP 8.3 + MySQL 8 + Caddy with deterministic ports, replacing the legacy single-container `php-cs-fixer`-only setup. Ships `make` targets for `test`, `coverage`, `analyse`, `rector`, `rector-dry`, `flush`, `dev-build`, and `sh`
+- **Rector configuration** — `make rector` / `make rector-dry` target SS5→SS6 + PHP 8.3 + standard presets, applying both refactors and code style. Replaces the previous `php-cs-fixer` step entirely
 - **Dependabot configuration** for Composer, the `.docker/` Dockerfile, and GitHub Actions versions
 - **Restructured documentation** — `docs/usage/templates.md`, `docs/usage/configuration.md`, `docs/architecture/data-model.md`, `docs/contributing.md` replace the single `docs/configuration.md` file
 - **`CHANGELOG.md` adopts Keep a Changelog format** — previous releases continue to be tracked on GitHub
 
 ### Changed
 
-- **PHPUnit config modernised** — `cacheResultFile` → `cacheDirectory` and `<coverage><include>` → `<source><include>`. The old forms still ran under PHPUnit 11 but fail its XSD, which blocked Infection from rewriting the config. Test metadata moved from `@dataProvider` docblocks to `#[DataProvider]` attributes, clearing all PHPUnit 11 deprecation notices
 - **BREAKING: SilverStripe 6 / PHP 8.3 baseline.** Requires `silverstripe/framework ^6.0`, `silverstripe/cms ^6.0`, `silverstripe/admin ^3.0`, `unclecheese/display-logic ^4.0`, `symbiote/silverstripe-gridfieldextensions ^5.0`, and PHP `^8.3`. The previous `silverstripe/display-logic ^3` constraint was incorrect (the code imports `UncleCheese\…`) and has been corrected as part of the bump
 - **BREAKING: `MenuItem::LinkType` is now a backed PHP enum.** The constant trio (`LINK_TYPE_PAGE` / `LINK_TYPE_URL` / `LINK_TYPE_FILE` / `LINK_TYPE_NO_LINK`) is replaced by `WeDevelop\Menustructure\Model\LinkType`. The database column changes from `Varchar` to MySQL `Enum('page,url,file,no-link,breakpoint', 'no-link')` — `dev/build` performs an in-place `ALTER TABLE` and existing rows are preserved (the four prior string values map onto the matching cases). Code that compared `$item->LinkType === MenuItem::LINK_TYPE_PAGE` should compare against `LinkType::Page->value` (or use `LinkType::tryFrom($item->LinkType)`)
 - **BREAKING: `updateLinkTypes` extension hook removed.** Combined with the dropped `link_types` config array, the set of valid link types is now closed at the PHP level. Custom link types must be contributed through a code change to this module — they can no longer be injected by downstream extensions at runtime. This is a deliberate trade-off against runtime extensibility for static analysis: the previous mechanism produced an unverifiable runtime set of types
@@ -47,15 +62,12 @@ First release on the SilverStripe 6 line. Targets PHP 8.3+ and SilverStripe `^6`
 - **`MenuItem::$owns`** — dead config (see Changed)
 - **`php-cs-fixer` integration** — code style is now enforced via Rector's `SilverstripeSetList::CODE_STYLE`
 
-### Fixed
-
-- **`license` declared in `composer.json`** (`MIT`, matching the `LICENSE` file that has shipped since the first release). Packagist reads the license from `composer.json`, so the package was previously listed as having no license
-
 ### Developer Experience
 
 - **PHPStan at level `max`** with `cambis/silverstan` ^2.1, `phpstan/phpstan-deprecation-rules`, and `tomasvotruba/type-coverage` at 100 %. Silverstan resolves SilverStripe's config conventions (private static `$db` / `$has_one` / `$has_many`, `Config_ForClass` access) which was the root cause of the bulk of the original analysis errors
 - **Deprecation rules surface SS6 deprecations as static-analysis errors** rather than runtime warnings — relevant because this branch will not be released alongside an SS5 backport
 - **`@covers` PHPDoc annotations replaced with `#[CoversClass]` attributes** in the test suite (PHPUnit 11 idiom)
-- **`.gitattributes` `export-ignore` entries** for `/.docker`, `/.github`, `/Taskfile.yml`, `/docs`, `/tests`, etc., so dev-only files don't ship in Packagist tarballs
+- **`.gitattributes` `export-ignore` entries** for `/.docker`, `/.github`, `/Makefile`, `/docs`, `/tests`, etc., so dev-only files don't ship in Packagist tarballs
 
+[6.0.0]: https://github.com/wedevelopnl/silverstripe-menustructure/releases/tag/6.0.0
 [6.0.0-rc.1]: https://github.com/wedevelopnl/silverstripe-menustructure/releases/tag/6.0.0-rc.1
